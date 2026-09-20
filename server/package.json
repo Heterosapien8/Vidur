@@ -6,10 +6,12 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "node --test test/screen-schema.test.js && node test-dom-extraction.js"
+    "test": "node --test test/plan-action.test.js test/sanitizer.test.js test/screen-schema.test.js test/executor.test.js test/orchestration-e2e.test.js && node test-dom-extraction.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.127.0",
     "cors": "^2.8.5",
+    "dotenv": "^18.0.1",
     "express": "^4.19.2",
     "tesseract.js": "^7.0.0"
   },
