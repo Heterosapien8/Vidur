@@ -7,41 +7,109 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="popup-card">
+  <div class="popup-container">
+    <!-- Header -->
     <header class="header">
-      <div class="logo-container">
-        <div class="logo-icon">V</div>
+      <div class="logo-group">
+        <div class="logo-badge">V</div>
         <div>
-          <h1 class="title">Vidur</h1>
-          <span class="version">v1.0.0</span>
+          <h1 class="app-title">Vidur</h1>
+          <span class="app-subtitle">Unified Screen Schema & Perception</span>
         </div>
       </div>
+      <span class="badge-version">v1.1.0</span>
     </header>
 
-    <main class="content">
-      <div class="description-box">
-        <p class="desc-text">Ready to capture and analyze tab content.</p>
-      </div>
-
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Action Button -->
       <button id="captureBtn" class="capture-button" type="button">
-        <svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg id="cameraIcon" class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
           <circle cx="12" cy="13" r="4"></circle>
         </svg>
-        <span>Capture Screen</span>
+        <span id="spinnerIcon" class="spinner" style="display: none;"></span>
+        <span id="btnText">Capture Screen</span>
       </button>
 
-      <div id="status" class="status-container" style="display: none;">
-        <span class="status-dot"></span>
-        <span id="statusText" class="status-text"></span>
+      <!-- Status / Alert Message -->
+      <div id="statusAlert" class="alert-box" style="display: none;">
+        <span id="statusIcon" class="alert-icon">ℹ️</span>
+        <div class="alert-content">
+          <span id="statusTitle" class="alert-title"></span>
+          <span id="statusMessage" class="alert-message"></span>
+        </div>
       </div>
+
+      <!-- Results Container (shown after capture) -->
+      <section id="resultsSection" class="results-section" style="display: none;">
+        <!-- Metrics bar -->
+        <div class="metrics-bar">
+          <div class="metric-pill">
+            <span class="metric-dot"></span>
+            <span id="elementCountBadge" class="metric-text">0 Elements</span>
+          </div>
+          <div class="metric-breakdown">
+            <span id="domCountBadge" class="badge-pill dom-pill">0 DOM</span>
+            <span id="ocrCountBadge" class="badge-pill ocr-pill">0 OCR</span>
+          </div>
+          <span id="viewportBadge" class="metric-subtext"></span>
+        </div>
+
+        <!-- Screenshot Preview Card -->
+        <div class="card screenshot-card">
+          <div class="card-header">
+            <span class="card-title">Viewport Screenshot</span>
+            <button id="viewFullImageBtn" class="mini-action-btn" type="button" title="Open screenshot in new tab">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+              <span>Full View</span>
+            </button>
+          </div>
+          <div class="image-wrapper">
+            <img id="screenshotImg" class="screenshot-img" alt="Captured Tab Viewport" />
+          </div>
+        </div>
+
+        <!-- Collapsible Screen Schema JSON View -->
+        <div class="card json-card">
+          <details id="jsonDetails" open>
+            <summary class="json-summary">
+              <div class="summary-left">
+                <svg class="chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+                <span class="card-title">Unified Screen Schema (v1.0)</span>
+              </div>
+              <button id="copyJsonBtn" class="mini-action-btn" type="button" title="Copy Screen Schema JSON">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span id="copyBtnText">Copy JSON</span>
+              </button>
+            </summary>
+            <div class="json-content-wrapper">
+              <pre class="json-pre"><code id="jsonContent" class="json-code"></code></pre>
+            </div>
+          </details>
+        </div>
+      </section>
     </main>
 
+    <!-- Footer -->
     <footer class="footer">
-      <span class="footer-note">Vidur AI Monorepo</span>
+      <span>Vidur AI Monorepo</span>
     </footer>
   </div>
 
+  <!-- Scripts -->
+  <script src="../lib/tesseract.min.js"></script>
+  <script src="../perception.js"></script>
+  <script src="../screen-schema.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
