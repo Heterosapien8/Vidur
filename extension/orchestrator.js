@@ -4,12 +4,15 @@
  * Features Demo Mode offline fallback, stale element recovery, and live event broadcasting.
  */
 
-const MAX_LOOP_ITERATIONS = 15;
-const DEFAULT_SETTLE_DELAY_MS = 1000;
-const DEFAULT_SERVER_URL = 'http://localhost:3000/plan-action';
+(function (root) {
+  'use strict';
 
-// Orchestrator State
-let activeLoop = null;
+  const MAX_LOOP_ITERATIONS = 15;
+  const DEFAULT_SETTLE_DELAY_MS = 1000;
+  const DEFAULT_SERVER_URL = 'http://localhost:3000/plan-action';
+
+  // Orchestrator State
+  let activeLoop = null;
 
 /**
  * Offline Mock Planner: Generates realistic action plans when Demo Mode is active
@@ -621,9 +624,7 @@ function getActiveLoop() {
   return activeLoop;
 }
 
-// Global and module exports
-if (typeof window !== 'undefined') {
-  window.VidurOrchestrator = {
+  const VidurOrchestrator = {
     AgentOrchestrator,
     generateOfflineMockPlan,
     startOrchestration,
@@ -631,24 +632,17 @@ if (typeof window !== 'undefined') {
     approvePendingAction,
     getActiveLoop
   };
-} else if (typeof globalThis !== 'undefined') {
-  globalThis.VidurOrchestrator = {
-    AgentOrchestrator,
-    generateOfflineMockPlan,
-    startOrchestration,
-    stopOrchestration,
-    approvePendingAction,
-    getActiveLoop
-  };
-}
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    AgentOrchestrator,
-    generateOfflineMockPlan,
-    startOrchestration,
-    stopOrchestration,
-    approvePendingAction,
-    getActiveLoop
-  };
-}
+  root.VidurOrchestrator = VidurOrchestrator;
+  root.AgentOrchestrator = AgentOrchestrator;
+  root.generateOfflineMockPlan = generateOfflineMockPlan;
+  root.startOrchestration = startOrchestration;
+  root.stopOrchestration = stopOrchestration;
+  root.approvePendingAction = approvePendingAction;
+  root.getActiveLoop = getActiveLoop;
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = VidurOrchestrator;
+  }
+})(typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : globalThis);
+

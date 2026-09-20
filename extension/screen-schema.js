@@ -3,6 +3,9 @@
  * Merges DOM Accessibility tree and OCR perception results with IoU deduplication.
  */
 
+(function (root) {
+  'use strict';
+
 /**
  * Calculates the Intersection over Union (IoU) between two bounding boxes.
  * @param {{ x: number, y: number, width: number, height: number }} boxA
@@ -167,18 +170,21 @@ function buildScreenSchema(axTreeElements = [], ocrResults = [], viewport = { wi
   };
 }
 
-// Export for browser window and Node.js environments
-if (typeof window !== 'undefined') {
-  window.calculateIoU = calculateIoU;
-  window.hasSignificantOverlap = hasSignificantOverlap;
-  window.extractDomain = extractDomain;
-  window.buildScreenSchema = buildScreenSchema;
-}
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
+  const VidurScreenSchema = {
     calculateIoU,
     hasSignificantOverlap,
     extractDomain,
     buildScreenSchema
   };
-}
+
+  root.VidurScreenSchema = VidurScreenSchema;
+  root.calculateIoU = calculateIoU;
+  root.hasSignificantOverlap = hasSignificantOverlap;
+  root.extractDomain = extractDomain;
+  root.buildScreenSchema = buildScreenSchema;
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = VidurScreenSchema;
+  }
+})(typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : globalThis);
+

@@ -3,6 +3,9 @@
  * Detects and redacts Personally Identifiable Information (PII) before cloud transmission.
  */
 
+(function (root) {
+  'use strict';
+
 /**
  * Validates a number string using the Luhn Algorithm (Mod 10).
  * Standard for credit cards (Visa, MasterCard, Amex, Discover, RuPay, etc.).
@@ -320,20 +323,7 @@ async function getPlaceholderMap(sessionId) {
   }
 }
 
-// Export for browser and Node.js
-if (typeof window !== 'undefined') {
-  window.isValidLuhn = isValidLuhn;
-  window.isAadhaarNumber = isAadhaarNumber;
-  window.isEmailAddress = isEmailAddress;
-  window.isPhoneNumber = isPhoneNumber;
-  window.detectPIICategory = detectPIICategory;
-  window.sanitizeSchema = sanitizeSchema;
-  window.storePlaceholderMap = storePlaceholderMap;
-  window.getPlaceholderMap = getPlaceholderMap;
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
+  const VidurSanitizer = {
     isValidLuhn,
     isAadhaarNumber,
     isEmailAddress,
@@ -343,4 +333,19 @@ if (typeof module !== 'undefined' && module.exports) {
     storePlaceholderMap,
     getPlaceholderMap
   };
-}
+
+  root.VidurSanitizer = VidurSanitizer;
+  root.isValidLuhn = isValidLuhn;
+  root.isAadhaarNumber = isAadhaarNumber;
+  root.isEmailAddress = isEmailAddress;
+  root.isPhoneNumber = isPhoneNumber;
+  root.detectPIICategory = detectPIICategory;
+  root.sanitizeSchema = sanitizeSchema;
+  root.storePlaceholderMap = storePlaceholderMap;
+  root.getPlaceholderMap = getPlaceholderMap;
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = VidurSanitizer;
+  }
+})(typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : globalThis);
+

@@ -244,8 +244,8 @@ function generateHeuristicPlan(task, sanitizedSchema, actionHistory = []) {
  */
 async function planAction({ task, sanitizedSchema, actionHistory = [] }) {
   const elements = sanitizedSchema?.elements || [];
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  const modelName = process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022';
+  const groqApiKey = process.env.GROQ_API_KEY;
+  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
 
   // Format schema payload for LLM (compact representation)
   const compactElements = elements.map((el) => ({
@@ -263,8 +263,8 @@ async function planAction({ task, sanitizedSchema, actionHistory = [] }) {
   const userPrompt = JSON.stringify(
     {
       task: task,
-      domain: sanitizedSchema.domain || 'unknown',
-      viewport: sanitizedSchema.viewport || { width: 0, height: 0 },
+      domain: sanitizedSchema?.domain || 'unknown',
+      viewport: sanitizedSchema?.viewport || { width: 0, height: 0 },
       actionHistory: actionHistory,
       elements: compactElements
     },
@@ -272,81 +272,127 @@ async function planAction({ task, sanitizedSchema, actionHistory = [] }) {
     2
   );
 
-  // If no Anthropic API key is provided, use the smart deterministic fallback
-  if (!apiKey || apiKey === 'your_anthropic_api_key_here') {
-    console.log('[Vidur Reasoner] ANTHROPIC_API_KEY not configured. Using deterministic action planner.');
-    const heuristicPlan = generateHeuristicPlan(task, sanitizedSchema, actionHistory);
-    const validation = validateActionPlan(heuristicPlan, elements);
-    if (!validation.valid) {
-      throw new Error(`Heuristic action plan validation failed: ${validation.error}`);
-    }
-    return heuristicPlan;
-  }
+  // 1. If Groq API Key is configured (ultra-fast inference with Llama 3.3 / Llama 3)
+  if (groqApiKey && groqApiKey !== 'your_groq_api_key_here') {
+    const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+    console.log(`[Vidur Reasoner] Calling Groq API (${groqModel})...`);
 
-  // Initialize Anthropic client
-  const client = new Anthropic({ apiKey });
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: `Here is the current Screen Schema and the user task. Generate the next action plan.\n\n${userPrompt}` }
+    ];
 
-  const messages = [
-    {
-      role: 'user',
-      content: `Here is the current Screen Schema and the user task. Generate the next action plan.\n\n${userPrompt}`
-    }
-  ];
-
-  let rawResponseText = '';
-  let parsedPlan = null;
-  let validation = { valid: false };
-
-  // Attempt 1: Call Claude model
-  try {
-    const response = await client.messages.create({
-      model: modelName,
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: messages,
-      temperature: 0.1
-    });
-
-    rawResponseText = response.content?.[0]?.text || '';
-    parsedPlan = parseJSONResponse(rawResponseText);
-    validation = validateActionPlan(parsedPlan, elements);
-  } catch (err) {
-    console.warn('[Vidur Reasoner] Initial LLM attempt encountered parsing or API error:', err.message);
-    validation = { valid: false, error: err.message };
-  }
-
-  // Attempt 2 (Retry once if output was invalid or failed validation)
-  if (!validation.valid) {
-    console.log('[Vidur Reasoner] Retrying with error correction prompt...');
     try {
-      messages.push({ role: 'assistant', content: rawResponseText || '{}' });
-      messages.push({
-        role: 'user',
-        content: `Your previous response was invalid: ${validation.error || 'Failed to parse valid JSON'}. Please correct your response and output ONLY a valid JSON object matching { "reasoning": string, "done": boolean, "actions": [...] }.`
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: groqModel,
+          messages: messages,
+          temperature: 0.1,
+          response_format: { type: 'json_object' }
+        })
       });
 
-      const retryResponse = await client.messages.create({
-        model: modelName,
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`Groq API error HTTP ${response.status}: ${errBody}`);
+      }
+
+      const resData = await response.json();
+      const content = resData.choices?.[0]?.message?.content || '{}';
+      const parsedPlan = parseJSONResponse(content);
+      const validation = validateActionPlan(parsedPlan, elements);
+
+      if (validation.valid) {
+        console.log(`[Vidur Reasoner] Groq planned ${parsedPlan.actions.length} action(s). Reasoning: ${parsedPlan.reasoning}`);
+        return parsedPlan;
+      } else {
+        console.warn(`[Vidur Reasoner] Groq response validation failed: ${validation.error}`);
+      }
+    } catch (groqErr) {
+      console.warn(`[Vidur Reasoner] Groq call failed (${groqErr.message}), falling back...`);
+    }
+  }
+
+  // 2. If Anthropic API Key is configured (Claude 3.5 Sonnet)
+  if (anthropicApiKey && anthropicApiKey !== 'your_anthropic_api_key_here') {
+    const anthropicModel = process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022';
+    console.log(`[Vidur Reasoner] Calling Anthropic API (${anthropicModel})...`);
+    const client = new Anthropic({ apiKey: anthropicApiKey });
+
+    const messages = [
+      {
+        role: 'user',
+        content: `Here is the current Screen Schema and the user task. Generate the next action plan.\n\n${userPrompt}`
+      }
+    ];
+
+    let rawResponseText = '';
+    let parsedPlan = null;
+    let validation = { valid: false };
+
+    try {
+      const response = await client.messages.create({
+        model: anthropicModel,
         max_tokens: 1024,
         system: SYSTEM_PROMPT,
         messages: messages,
         temperature: 0.1
       });
 
-      const retryText = retryResponse.content?.[0]?.text || '';
-      parsedPlan = parseJSONResponse(retryText);
+      rawResponseText = response.content?.[0]?.text || '';
+      parsedPlan = parseJSONResponse(rawResponseText);
       validation = validateActionPlan(parsedPlan, elements);
+    } catch (err) {
+      console.warn('[Vidur Reasoner] Anthropic attempt encountered parsing or API error:', err.message);
+      validation = { valid: false, error: err.message };
+    }
 
-      if (!validation.valid) {
-        throw new Error(`Model response validation failed after retry: ${validation.error}`);
+    // Retry once if output was invalid
+    if (!validation.valid) {
+      console.log('[Vidur Reasoner] Retrying Anthropic with error correction prompt...');
+      try {
+        messages.push({ role: 'assistant', content: rawResponseText || '{}' });
+        messages.push({
+          role: 'user',
+          content: `Your previous response was invalid: ${validation.error || 'Failed to parse valid JSON'}. Please correct your response and output ONLY a valid JSON object matching { "reasoning": string, "done": boolean, "actions": [...] }.`
+        });
+
+        const retryResponse = await client.messages.create({
+          model: anthropicModel,
+          max_tokens: 1024,
+          system: SYSTEM_PROMPT,
+          messages: messages,
+          temperature: 0.1
+        });
+
+        const retryText = retryResponse.content?.[0]?.text || '';
+        parsedPlan = parseJSONResponse(retryText);
+        validation = validateActionPlan(parsedPlan, elements);
+
+        if (validation.valid) {
+          return parsedPlan;
+        }
+      } catch (retryErr) {
+        console.warn('[Vidur Reasoner] Anthropic retry failed:', retryErr.message);
       }
-    } catch (retryErr) {
-      console.warn('[Vidur Reasoner] Retry failed. Falling back to heuristic planner:', retryErr.message);
-      parsedPlan = generateHeuristicPlan(task, sanitizedSchema, actionHistory);
+    } else {
+      return parsedPlan;
     }
   }
 
-  return parsedPlan;
+  // 3. Fallback: Deterministic Heuristic Planner
+  console.log('[Vidur Reasoner] No external LLM key active (or remote call failed). Using deterministic action planner.');
+  const heuristicPlan = generateHeuristicPlan(task, sanitizedSchema, actionHistory);
+  const validation = validateActionPlan(heuristicPlan, elements);
+  if (!validation.valid) {
+    throw new Error(`Heuristic action plan validation failed: ${validation.error}`);
+  }
+  return heuristicPlan;
 }
 
 module.exports = {

@@ -4,22 +4,17 @@
  * LLM action reasoning, and local autonomous execution loops.
  */
 
-// Import service worker compatible modules safely
-const modules = [
-  'screen-schema.js',
-  'sanitizer.js',
-  'vault.js',
-  'executor.js',
-  'orchestrator.js'
-];
-
-for (const mod of modules) {
-  try {
-    importScripts(mod);
-    console.log(`[Vidur Background] Loaded module: ${mod}`);
-  } catch (err) {
-    console.error(`[Vidur Background] Failed to load module ${mod}:`, err.message);
-  }
+try {
+  importScripts(
+    'screen-schema.js',
+    'sanitizer.js',
+    'vault.js',
+    'executor.js',
+    'orchestrator.js'
+  );
+  console.log('[Vidur Background] Loaded service worker modules successfully.');
+} catch (err) {
+  console.error('[Vidur Background] Failed to load modules:', err.message);
 }
 
 chrome.runtime.onInstalled.addListener(() => {

@@ -4,6 +4,9 @@
  * and dispatches DOM actions into the active page context.
  */
 
+(function (root) {
+  'use strict';
+
 /**
  * Resolves a placeholder token (e.g. {{FIELD:EMAIL_1}}) against local sources.
  * Resolution Order:
@@ -365,28 +368,21 @@ async function executeAction(tabId, action, screenSchema, options = {}) {
   }
 }
 
-// Global and module exports
-if (typeof window !== 'undefined') {
-  window.VidurExecutor = {
+  const VidurExecutor = {
     resolvePlaceholder,
     isSensitiveAction,
     executeDOMActionInPage,
     executeAction
   };
-} else if (typeof globalThis !== 'undefined') {
-  globalThis.VidurExecutor = {
-    resolvePlaceholder,
-    isSensitiveAction,
-    executeDOMActionInPage,
-    executeAction
-  };
-}
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    resolvePlaceholder,
-    isSensitiveAction,
-    executeDOMActionInPage,
-    executeAction
-  };
-}
+  root.VidurExecutor = VidurExecutor;
+  root.resolvePlaceholder = resolvePlaceholder;
+  root.isSensitiveAction = isSensitiveAction;
+  root.executeDOMActionInPage = executeDOMActionInPage;
+  root.executeAction = executeAction;
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = VidurExecutor;
+  }
+})(typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : globalThis);
+
