@@ -6,14 +6,16 @@
   <title>Vidur Enterprise - Contact & Support Inquiry</title>
   <style>
     :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --card-border: #334155;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #6366f1;
-      --accent-hover: #4f46e5;
-      --success: #10b981;
+      --bg: #ffbae8;
+      --card-bg: #ffffff;
+      --text: #000000;
+      --text-muted: #333333;
+      --btn-bg: #000000;
+      --btn-text: #F5E6FA;
+      --border: 2px solid #000000;
+      --shadow-flat: 4px 4px 0px #000000;
+      --font-main: Georgia, 'Times New Roman', Times, serif;
+      --font-ui: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
     }
 
     * {
@@ -23,9 +25,9 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background-color: var(--bg);
       color: var(--text);
+      font-family: var(--font-main);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -40,6 +42,8 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 25px;
+      border-bottom: 2px solid #000000;
+      padding-bottom: 12px;
     }
 
     .brand {
@@ -49,66 +53,89 @@
     }
 
     .brand-icon {
-      width: 38px;
-      height: 38px;
-      background: linear-gradient(135deg, #10b981, #6366f1);
-      border-radius: 9px;
+      width: 36px;
+      height: 36px;
+      background-color: #000000;
+      border: 1px solid #000000;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-family: var(--font-ui);
       font-weight: 800;
       font-size: 18px;
-      color: white;
+      color: var(--btn-text);
     }
 
     .brand-name {
+      font-family: var(--font-main);
       font-size: 18px;
       font-weight: 700;
     }
 
     .brand-sub {
-      font-size: 11.5px;
+      font-family: var(--font-ui);
+      font-size: 11px;
       color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     .nav-links {
       display: flex;
       gap: 14px;
-      font-size: 12.5px;
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
     }
 
     .nav-links a {
-      color: #818cf8;
-      text-decoration: none;
+      color: #000000;
+      text-decoration: underline;
     }
 
     .nav-links a:hover {
-      text-decoration: underline;
+      background-color: #ffffff;
     }
 
     .form-card {
       width: 100%;
       max-width: 650px;
       background-color: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 28px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      border: var(--border);
+      padding: 32px;
+      box-shadow: var(--shadow-flat);
       display: flex;
       flex-direction: column;
       gap: 18px;
     }
 
+    .badge-label {
+      display: inline-block;
+      font-family: var(--font-ui);
+      font-size: 9.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background-color: #000000;
+      color: var(--btn-text);
+      padding: 2px 7px;
+      margin-bottom: 6px;
+    }
+
     .card-title {
-      font-size: 18px;
+      font-family: var(--font-main);
+      font-size: 22px;
       font-weight: 700;
-      color: #ffffff;
+      color: var(--text);
     }
 
     .card-desc {
+      font-family: var(--font-main);
       font-size: 13px;
       color: var(--text-muted);
       line-height: 1.4;
+      margin-top: 4px;
     }
 
     .contact-form {
@@ -121,7 +148,7 @@
     .form-row-2col {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 14px;
     }
 
     @media (max-width: 540px) {
@@ -137,27 +164,29 @@
     }
 
     .form-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #cbd5e1;
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text);
     }
 
     .form-input, .form-select, .form-textarea {
       width: 100%;
-      padding: 10px 14px;
-      background-color: #0b1120;
-      border: 1px solid var(--card-border);
-      border-radius: 7px;
-      color: #ffffff;
+      padding: 10px 12px;
+      background-color: #ffffff;
+      border: 1.5px solid #000000;
+      color: #000000;
+      font-family: var(--font-main);
       font-size: 13.5px;
       outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      font-family: inherit;
+      transition: box-shadow 0.15s;
     }
 
     .form-input:focus, .form-select:focus, .form-textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+      box-shadow: 2px 2px 0px #000000;
+      border-color: #000000;
     }
 
     .form-textarea {
@@ -165,49 +194,70 @@
       min-height: 80px;
     }
 
+    /* Button: Solid Flat Black, Font #F5E6FA, NO GRADIENTS */
     .submit-btn {
       padding: 12px 20px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
+      background-color: var(--btn-bg);
+      background-image: none !important;
+      color: var(--btn-text);
+      border: 2px solid #000000;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       cursor: pointer;
-      transition: transform 0.15s, background 0.2s;
+      box-shadow: 3px 3px 0px #000000;
+      transition: transform 0.1s, box-shadow 0.1s;
       margin-top: 6px;
     }
 
     .submit-btn:hover {
-      background: linear-gradient(135deg, #4f46e5, #4338ca);
-      transform: translateY(-1px);
+      background-color: #1a1a1a;
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0px #000000;
+    }
+
+    .submit-btn:active {
+      transform: translate(1px, 1px);
+      box-shadow: 2px 2px 0px #000000;
     }
 
     .success-alert {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 14px;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.4);
-      border-radius: 8px;
-      color: #a7f3d0;
+      padding: 12px 14px;
+      background-color: #ffbae8;
+      border: 2px solid #000000;
+      color: #000000;
+      font-family: var(--font-main);
       font-size: 13px;
-      animation: fadeIn 0.3s ease-out;
+      font-weight: 600;
+      box-shadow: 2px 2px 0px #000000;
+    }
+
+    .status-badge {
+      font-family: var(--font-ui);
+      font-size: 9px;
+      font-weight: 800;
+      background-color: #000000;
+      color: var(--btn-text);
+      padding: 2px 6px;
     }
 
     .privacy-notice {
+      font-family: var(--font-ui);
       font-size: 11px;
+      font-weight: 600;
       color: var(--text-muted);
       display: flex;
       align-items: center;
-      gap: 5px;
-      margin-top: 4px;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-4px); }
-      to { opacity: 1; transform: translateY(0); }
+      gap: 8px;
+      margin-top: 6px;
+      padding: 6px 10px;
+      background-color: #f7f7f7;
+      border: 1px solid #000000;
     }
   </style>
 </head>
@@ -228,12 +278,13 @@
 
   <div class="form-card">
     <div>
+      <span class="badge-label">ENTERPRISE INQUIRY</span>
       <h2 class="card-title">Enterprise Contact & Inquiry</h2>
       <p class="card-desc">Test Vidur's zero-shot autonomous multi-field form completion on an unseen form.</p>
     </div>
 
     <div id="submission-alert" class="success-alert" style="display: none;">
-      <span>✅</span>
+      <span class="status-badge">SUCCESS</span>
       <span id="submission-text">Inquiry submitted successfully!</span>
     </div>
 
@@ -312,8 +363,8 @@
       </button>
 
       <div class="privacy-notice">
-        <span>🛡️</span>
-        <span>Vidur Privacy Guard redacts Name, Email, Phone, and Address before reasoning.</span>
+        <span class="status-badge">GUARD</span>
+        <span>Vidur Privacy Guard redacts Name, Email, Phone, and Address locally before reasoning.</span>
       </div>
     </form>
   </div>

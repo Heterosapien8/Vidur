@@ -278,7 +278,7 @@ class AgentOrchestrator {
             logType: 'PII_REDACTED',
             count: sanitizeResult.piiCount,
             categories: sanitizeResult.piiCategories,
-            message: `🛡️ Sanitized ${sanitizeResult.piiCount} sensitive field(s) locally.`
+            message: `Sanitized ${sanitizeResult.piiCount} sensitive field(s) locally.`
           });
         }
 
@@ -292,7 +292,7 @@ class AgentOrchestrator {
           reasoning: plan.reasoning,
           done: plan.done,
           actions: plan.actions,
-          message: `🧠 Reasoning: ${plan.reasoning}`
+          message: `Reasoning: ${plan.reasoning}`
         });
 
         // Check completion
@@ -301,7 +301,7 @@ class AgentOrchestrator {
           this.emitEvent('AGENT_STATUS', {
             status: 'COMPLETED',
             iteration: this.iteration,
-            message: `🎉 Goal achieved in ${this.iteration} iteration(s)!`
+            message: `Goal achieved in ${this.iteration} iteration(s).`
           });
           this.emitEvent('AGENT_LOG', {
             logType: 'SUCCESS',
@@ -356,7 +356,7 @@ class AgentOrchestrator {
               this.emitEvent('AGENT_LOG', {
                 logType: 'ACTION_REJECTED',
                 action: action,
-                message: `⚠️ Action on ${action.elementId} was rejected by user. Skipping.`
+                message: `Action on ${action.elementId} was rejected by user. Skipping.`
               });
               continue;
             }
@@ -396,28 +396,28 @@ class AgentOrchestrator {
               logType: 'ACTION_EXECUTED',
               action: action,
               result: execResult,
-              message: `▶ [${action.type.toUpperCase()}] #${action.elementId}${tokenMsg}`
+              message: `[${action.type.toUpperCase()}] #${action.elementId}${tokenMsg}`
             });
           } else if (execResult.staleElement) {
             this.emitEvent('AGENT_LOG', {
               logType: 'ACTION_SKIPPED',
               action: action,
               error: execResult.error,
-              message: `⚠️ Stale Element #${action.elementId}: Page changed dynamically, re-capturing...`
+              message: `Stale Element #${action.elementId}: Page changed dynamically, re-capturing...`
             });
           } else if (execResult.skipped) {
             this.emitEvent('AGENT_LOG', {
               logType: 'ACTION_SKIPPED',
               action: action,
               error: execResult.error,
-              message: `⚠️ Skipped #${action.elementId}: ${execResult.error}`
+              message: `Skipped #${action.elementId}: ${execResult.error}`
             });
           } else {
             this.emitEvent('AGENT_LOG', {
               logType: 'ACTION_FAILED',
               action: action,
               error: execResult.error,
-              message: `❌ Failed #${action.elementId}: ${execResult.error}`
+              message: `Failed #${action.elementId}: ${execResult.error}`
             });
           }
         }
@@ -432,13 +432,13 @@ class AgentOrchestrator {
         this.status = 'ERROR';
         const msg = `Maximum iteration limit (${MAX_LOOP_ITERATIONS}) reached without completing task.`;
         this.emitEvent('AGENT_STATUS', { status: 'ERROR', message: msg });
-        this.emitEvent('AGENT_LOG', { logType: 'ERROR', message: `🛑 ${msg}` });
+        this.emitEvent('AGENT_LOG', { logType: 'ERROR', message: msg });
         return { success: false, error: msg, history: this.actionHistory };
       }
     } catch (err) {
       this.status = 'ERROR';
       this.emitEvent('AGENT_STATUS', { status: 'ERROR', message: err.message });
-      this.emitEvent('AGENT_LOG', { logType: 'ERROR', message: `🛑 Error in agent loop: ${err.message}` });
+      this.emitEvent('AGENT_LOG', { logType: 'ERROR', message: `Error in agent loop: ${err.message}` });
       return { success: false, error: err.message, history: this.actionHistory };
     }
   }
@@ -586,7 +586,7 @@ class AgentOrchestrator {
       console.warn('[Vidur Orchestrator] Server reasoning error or timeout, falling back to Demo Mode planner:', err.message);
       this.emitEvent('AGENT_LOG', {
         logType: 'INFO',
-        message: '📡 Backend unreachable. Seamlessly using Demo Mode action planner.'
+        message: 'Backend unreachable. Seamlessly using Demo Mode action planner.'
       });
       return generateOfflineMockPlan(this.task, sanitizedSchema, this.actionHistory);
     }

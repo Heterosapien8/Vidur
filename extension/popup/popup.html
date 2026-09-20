@@ -26,7 +26,6 @@
         </label>
         <!-- Vault Mini Badge -->
         <div id="vaultStatusIndicator" class="vault-mini-badge locked" title="Vault status">
-          <span class="vault-mini-icon">🔒</span>
           <span id="vaultMiniText">Locked</span>
         </div>
       </div>
@@ -35,19 +34,16 @@
     <!-- Navigation Tabs -->
     <nav class="nav-tabs">
       <button id="navTaskTab" class="tab-btn active" type="button">
-        <span class="tab-icon">⚡</span>
         <span>Task</span>
       </button>
       <button id="navPrivacyTab" class="tab-btn" type="button">
-        <span class="tab-icon">🛡️</span>
         <span>Privacy</span>
       </button>
       <button id="navVaultTab" class="tab-btn" type="button">
-        <span class="tab-icon">🔐</span>
         <span>Vault</span>
       </button>
       <button id="navPipelineBtn" class="tab-btn-mini" type="button" title="View 5-Stage How It Works Pipeline">
-        <span class="tab-icon">ℹ️</span>
+        <span>Pipeline</span>
       </button>
     </nav>
 
@@ -72,22 +68,22 @@
         <!-- 3 Live Demo Presets -->
         <div class="task-presets">
           <span class="presets-label">Presets:</span>
-          <button class="preset-pill" type="button" data-task="search for wireless headphones">🔍 Search Headphones</button>
-          <button class="preset-pill" type="button" data-task="log in with my account">🔑 Login Form</button>
-          <button class="preset-pill" type="button" data-task="submit enterprise inquiry for our team">📝 Contact Form</button>
+          <button class="preset-pill" type="button" data-task="search for wireless headphones">Search Headphones</button>
+          <button class="preset-pill" type="button" data-task="log in with my account">Login Form</button>
+          <button class="preset-pill" type="button" data-task="submit enterprise inquiry for our team">Contact Form</button>
         </div>
 
         <div class="agent-actions">
           <button id="startAgentBtn" class="primary-btn start-agent-btn" type="button">
-            <svg id="playIcon" class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <svg id="playIcon" class="btn-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
             <span id="agentSpinner" class="spinner" style="display: none;"></span>
             <span id="startAgentBtnText">Start Autonomous Agent</span>
           </button>
           <button id="stopAgentBtn" class="stop-btn" type="button" style="display: none;">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12" rx="1"></rect>
             </svg>
             <span>Stop</span>
           </button>
@@ -97,7 +93,7 @@
       <!-- Safety Approval Banner (Human-in-the-Loop) -->
       <section id="approvalBanner" class="approval-card" style="display: none;">
         <div class="approval-header">
-          <span class="approval-warning-icon">⚠️</span>
+          <span class="approval-tag-badge">ALERT</span>
           <div>
             <span class="approval-title">Human-in-the-Loop Approval</span>
             <p id="approvalReason" class="approval-desc">The agent paused before executing a sensitive submit/payment operation.</p>
@@ -109,10 +105,10 @@
         </div>
         <div class="approval-buttons">
           <button id="approveActionBtn" class="approval-btn approve" type="button">
-            <span>✅ Approve Action</span>
+            <span>Approve Action</span>
           </button>
           <button id="rejectActionBtn" class="approval-btn reject" type="button">
-            <span>❌ Reject & Skip</span>
+            <span>Reject & Skip</span>
           </button>
         </div>
       </section>
@@ -139,7 +135,6 @@
         </div>
         <div id="agentLogFeed" class="agent-log-feed">
           <div class="empty-log-state">
-            <span class="empty-icon">⚡</span>
             <span>Ready. Enter a task above and start the agent loop.</span>
           </div>
         </div>
@@ -150,7 +145,7 @@
     <main id="privacyTabContent" class="tab-content" style="display: none;">
       <!-- Capture / Refresh Button -->
       <button id="captureBtn" class="capture-button" type="button">
-        <svg id="cameraIcon" class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <svg id="cameraIcon" class="btn-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
           <circle cx="12" cy="13" r="4"></circle>
         </svg>
@@ -160,7 +155,7 @@
 
       <!-- Status Alert -->
       <div id="statusAlert" class="alert-box" style="display: none;">
-        <span id="statusIcon" class="alert-icon">ℹ️</span>
+        <span id="statusTag" class="alert-tag">INFO</span>
         <div class="alert-content">
           <span id="statusTitle" class="alert-title"></span>
           <span id="statusMessage" class="alert-message"></span>
@@ -170,7 +165,7 @@
       <!-- Privacy Stats Banner -->
       <section id="privacyStatsBanner" class="privacy-banner" style="display: none;">
         <div class="privacy-banner-left">
-          <span class="shield-icon">🛡️</span>
+          <span class="privacy-status-badge">PROTECTED</span>
           <div>
             <span id="privacyTitle" class="privacy-title">Privacy Guard Active</span>
             <p id="privacySubtitle" class="privacy-desc">Sensitive PII values redacted into scoped tokens locally before cloud transmission.</p>
@@ -184,7 +179,7 @@
         <!-- Left: Raw Original Schema -->
         <div class="card schema-compare-card raw-card">
           <div class="compare-card-header raw-header">
-            <span class="compare-title">⚠️ RAW DOM SCHEMA</span>
+            <span class="compare-title">RAW DOM SCHEMA</span>
             <span class="compare-tag raw-tag">On-Device Only</span>
           </div>
           <div class="compare-json-wrapper">
@@ -195,8 +190,8 @@
         <!-- Right: Sanitized Cloud-Safe Schema -->
         <div class="card schema-compare-card sanitized-card">
           <div class="compare-card-header sanitized-header">
-            <span class="compare-title">🔒 SANITIZED SCHEMA</span>
-            <span class="compare-tag sanitized-tag">Cloud LLM Safe</span>
+            <span class="compare-title">SANITIZED SCHEMA</span>
+            <span class="compare-tag sanitized-tag">Cloud Safe</span>
           </div>
           <div class="compare-json-wrapper">
             <pre class="json-pre"><code id="sanitizedJsonCode" class="json-code sanitized-code"></code></pre>
@@ -211,7 +206,7 @@
       <section class="card vault-auth-card">
         <div class="vault-auth-header">
           <div class="vault-auth-icon-wrap">
-            <span id="vaultAuthStatusIcon" class="vault-auth-icon">🔒</span>
+            <span id="vaultAuthStatusIcon" class="vault-auth-icon">SECURE</span>
           </div>
           <div>
             <h2 id="vaultAuthTitle" class="vault-auth-title">Local Encrypted Vault</h2>
@@ -239,7 +234,7 @@
       <section id="vaultProfileSection" class="card vault-profile-card" style="display: none;">
         <div class="card-header">
           <span class="card-title">Profile Vault Data</span>
-          <span class="vault-guard-badge">🔒 Encrypted on-device</span>
+          <span class="vault-guard-badge">Encrypted on-device</span>
         </div>
 
         <form id="vaultProfileForm" class="vault-form">
@@ -285,16 +280,16 @@
       <div class="pipeline-modal-card">
         <div class="pipeline-modal-header">
           <div class="pipeline-title-group">
-            <span class="pipeline-icon">⚡</span>
-            <h3 class="pipeline-title">How Vidur Works: 5-Stage Pipeline</h3>
+            <span class="pipeline-badge">FLOW</span>
+            <h3 class="pipeline-title">Vidur Architecture: 5-Stage Pipeline</h3>
           </div>
-          <button id="closePipelineBtn" class="close-modal-btn" type="button">✕</button>
+          <button id="closePipelineBtn" class="close-modal-btn" type="button">Close</button>
         </div>
 
         <div class="pipeline-stages-container">
           <!-- Stage 1 -->
           <div class="pipeline-stage-box">
-            <div class="stage-num">1</div>
+            <div class="stage-num">01</div>
             <div class="stage-info">
               <span class="stage-name">Viewport Capture</span>
               <span class="stage-desc">Captures visual tab screenshot and DOM tree</span>
@@ -303,7 +298,7 @@
 
           <!-- Stage 2 -->
           <div class="pipeline-stage-box">
-            <div class="stage-num">2</div>
+            <div class="stage-num">02</div>
             <div class="stage-info">
               <span class="stage-name">Accessibility Tree + OCR</span>
               <span class="stage-desc">Builds unified structural Screen Schema with IoU deduplication</span>
@@ -312,7 +307,7 @@
 
           <!-- PRIVACY BOUNDARY (THE CORE DIFFERENTIATOR) -->
           <div class="privacy-boundary-banner">
-            <div class="boundary-lock-pulse">🔒</div>
+            <div class="boundary-badge">ZERO-LEAK</div>
             <div class="boundary-text">
               <span class="boundary-title">ZERO-LEAK PRIVACY BOUNDARY</span>
               <span class="boundary-desc">Raw PII is stripped. Only tokens like {{FIELD:EMAIL_1}} leave the device.</span>
@@ -321,7 +316,7 @@
 
           <!-- Stage 3 -->
           <div class="pipeline-stage-box">
-            <div class="stage-num">3</div>
+            <div class="stage-num">03</div>
             <div class="stage-info">
               <span class="stage-name">Client-Side Sanitization</span>
               <span class="stage-desc">Luhn check, regex, autocomplete, and IndexedDB vault map</span>
@@ -330,16 +325,16 @@
 
           <!-- Stage 4 -->
           <div class="pipeline-stage-box">
-            <div class="stage-num">4</div>
+            <div class="stage-num">04</div>
             <div class="stage-info">
               <span class="stage-name">AI Action Reasoning</span>
-              <span class="stage-desc">Claude 3.5 Sonnet / Reasoner plans action JSON without seeing PII</span>
+              <span class="stage-desc">Reasoning agent plans action JSON without seeing confidential PII</span>
             </div>
           </div>
 
           <!-- Stage 5 -->
           <div class="pipeline-stage-box">
-            <div class="stage-num">5</div>
+            <div class="stage-num">05</div>
             <div class="stage-info">
               <span class="stage-name">On-Device Vault Execution</span>
               <span class="stage-desc">Resolves tokens locally via WebCrypto vault & executes with safety gates</span>
@@ -348,14 +343,14 @@
         </div>
 
         <div class="pipeline-modal-footer">
-          <span>Pitch Guide: Vidur gives AI autonomous power without trusting it with your credentials.</span>
+          <span>Vidur delivers autonomous web actions without exposing credentials to cloud models.</span>
         </div>
       </div>
     </div>
 
     <!-- Footer -->
     <footer class="footer">
-      <span>Vidur AI Monorepo • Autonomous Web Agent</span>
+      <span>Vidur Autonomous Web Agent</span>
     </footer>
   </div>
 

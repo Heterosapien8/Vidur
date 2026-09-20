@@ -2,6 +2,7 @@
  * Vidur Extension - Side Panel & Popup Controller
  * Coordinates Autonomous Agent Loop, WebCrypto Encrypted Profile Vault,
  * Side-by-Side Privacy Redaction Schema, Demo Mode Toggle, and Pipeline Pitch Modal.
+ * Minimalist Design Edition (Black & #ffbae8, Georgia & Trebuchet MS, Zero Emojis).
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -18,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const closePipelineBtn = document.getElementById('closePipelineBtn');
 
   function switchTab(activeNav, activeContent) {
-    [navTaskTab, navPrivacyTab, navVaultTab].forEach((t) => t && t.classList.remove('active'));
+    [navTaskTab, navPrivacyTab, navVaultTab, navPipelineBtn].forEach((t) => t && t.classList.remove('active'));
     [taskTabContent, privacyTabContent, vaultTabContent].forEach((c) => {
       if (c) c.style.display = 'none';
     });
@@ -139,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (isUnlocked) {
       vaultStatusIndicator.className = 'vault-mini-badge unlocked';
       if (vaultMiniText) vaultMiniText.textContent = 'Unlocked';
-      if (vaultAuthStatusIcon) vaultAuthStatusIcon.textContent = '🔓';
+      if (vaultAuthStatusIcon) vaultAuthStatusIcon.textContent = 'UNLOCKED';
       if (vaultAuthTitle) vaultAuthTitle.textContent = 'Profile Vault (Unlocked)';
       if (vaultAuthDesc) vaultAuthDesc.textContent = 'Encrypted profile data is active and ready for local token resolution.';
       if (unlockVaultBtn) unlockVaultBtn.style.display = 'none';
@@ -159,7 +160,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       vaultStatusIndicator.className = 'vault-mini-badge locked';
       if (vaultMiniText) vaultMiniText.textContent = isConfigured ? 'Locked' : 'Not Set';
-      if (vaultAuthStatusIcon) vaultAuthStatusIcon.textContent = '🔒';
+      if (vaultAuthStatusIcon) vaultAuthStatusIcon.textContent = 'SECURE';
       if (vaultAuthTitle) vaultAuthTitle.textContent = isConfigured ? 'Profile Vault (Locked)' : 'Set Up Profile Vault';
       if (vaultAuthDesc) {
         vaultAuthDesc.textContent = isConfigured
@@ -258,7 +259,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           await sendRuntimeMessage({ type: 'UPDATE_VAULT_PROFILE', profile });
         }
 
-        saveVaultProfileBtn.textContent = '✅ Saved & Encrypted!';
+        saveVaultProfileBtn.textContent = 'Saved & Encrypted';
         setTimeout(() => {
           saveVaultProfileBtn.innerHTML = '<span>Save & Encrypt Profile</span>';
         }, 2000);
@@ -315,7 +316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (stopAgentBtn) stopAgentBtn.style.display = 'flex';
       if (agentStatusBar) agentStatusBar.style.display = 'flex';
       if (agentStatusDot) agentStatusDot.className = 'status-dot running';
-      if (agentStatusText) agentStatusText.textContent = 'Agent active...';
+      if (agentStatusText) agentStatusText.textContent = 'Agent active';
     } else {
       if (playIcon) playIcon.style.display = 'inline-block';
       if (agentSpinner) agentSpinner.style.display = 'none';
@@ -349,7 +350,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       item.classList.add('reasoning');
       item.innerHTML = `
         <div class="log-header-row">
-          <span class="log-tag" style="background:#4f46e5;color:#fff;">🧠 LLM Reasoning</span>
+          <span class="log-tag">LLM REASONING</span>
           <span class="log-time">${timeStr}</span>
         </div>
         <div class="log-body">${escapeHTML(logData.reasoning || logData.message)}</div>
@@ -358,12 +359,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       item.classList.add('action');
       const action = logData.action || {};
       const tokenChip = logData.result?.resolvedToken
-        ? `<div class="log-token-chip">🛡️ Resolved ${escapeHTML(logData.result.resolvedToken)} via ${escapeHTML(logData.result.resolutionSource || 'vault')}</div>`
+        ? `<div class="log-token-chip">Resolved ${escapeHTML(logData.result.resolvedToken)} via ${escapeHTML(logData.result.resolutionSource || 'vault')}</div>`
         : '';
 
       item.innerHTML = `
         <div class="log-header-row">
-          <span class="log-tag" style="background:#0284c7;color:#fff;">▶ Action: ${escapeHTML((action.type || 'EXEC').toUpperCase())}</span>
+          <span class="log-tag">ACTION: ${escapeHTML((action.type || 'EXEC').toUpperCase())}</span>
           <span class="log-time">${timeStr}</span>
         </div>
         <div class="log-body">Target: <b>#${escapeHTML(action.elementId || '')}</b> ${action.value ? `| Value: <i>"${escapeHTML(action.value)}"</i>` : ''}</div>
@@ -373,7 +374,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       item.classList.add('pii');
       item.innerHTML = `
         <div class="log-header-row">
-          <span class="log-tag" style="background:#059669;color:#fff;">🛡️ Privacy Guard</span>
+          <span class="log-tag">PRIVACY GUARD</span>
           <span class="log-time">${timeStr}</span>
         </div>
         <div class="log-body">${escapeHTML(logData.message)}</div>
@@ -382,7 +383,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       item.classList.add('success');
       item.innerHTML = `
         <div class="log-header-row">
-          <span class="log-tag" style="background:#10b981;color:#fff;">🎉 Task Done</span>
+          <span class="log-tag">TASK COMPLETED</span>
           <span class="log-time">${timeStr}</span>
         </div>
         <div class="log-body">${escapeHTML(logData.message)}</div>
@@ -391,7 +392,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       item.classList.add('error');
       item.innerHTML = `
         <div class="log-header-row">
-          <span class="log-tag" style="background:#dc2626;color:#fff;">⚠️ Alert</span>
+          <span class="log-tag">ALERT</span>
           <span class="log-time">${timeStr}</span>
         </div>
         <div class="log-body">${escapeHTML(logData.message || logData.error)}</div>
@@ -417,7 +418,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (agentLogFeed) {
         agentLogFeed.innerHTML = `
           <div class="empty-log-state">
-            <span class="empty-icon">⚡</span>
             <span>Log cleared. Ready for next run.</span>
           </div>
         `;
@@ -460,7 +460,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       setAgentRunning(true);
       appendLogItem({
         logType: 'START',
-        message: `🚀 Initiating autonomous loop for task: "${task}" ${isDemoMode ? '[DEMO MODE ACTIVE]' : ''}`
+        message: `Initiating autonomous loop for task: "${task}" ${isDemoMode ? '[DEMO MODE ACTIVE]' : ''}`
       });
 
       chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
@@ -503,7 +503,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       setAgentRunning(false);
       if (agentStatusDot) agentStatusDot.className = 'status-dot';
       if (agentStatusText) agentStatusText.textContent = 'Agent Stopped';
-      appendLogItem({ logType: 'INFO', message: '🛑 Agent loop stopped.' });
+      appendLogItem({ logType: 'INFO', message: 'Agent loop stopped.' });
     });
   }
 
@@ -515,7 +515,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (typeof approvePendingAction === 'function') {
         approvePendingAction(true);
       }
-      appendLogItem({ logType: 'INFO', message: '✅ Action approved by user. Resuming execution...' });
+      appendLogItem({ logType: 'INFO', message: 'Action approved by user. Resuming execution...' });
     });
   }
 
@@ -526,7 +526,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (typeof approvePendingAction === 'function') {
         approvePendingAction(false);
       }
-      appendLogItem({ logType: 'INFO', message: '❌ Action rejected by user. Skipped.' });
+      appendLogItem({ logType: 'INFO', message: 'Action rejected by user. Skipped.' });
     });
   }
 
@@ -603,7 +603,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const captureSpinner = document.getElementById('captureSpinner');
 
   const statusAlert = document.getElementById('statusAlert');
-  const statusIcon = document.getElementById('statusIcon');
+  const statusTag = document.getElementById('statusTag');
   const statusTitle = document.getElementById('statusTitle');
   const statusMessage = document.getElementById('statusMessage');
 
@@ -619,7 +619,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!statusAlert) return;
     statusAlert.style.display = 'flex';
     statusAlert.className = `alert-box ${type}`;
-    if (statusIcon) statusIcon.textContent = type === 'error' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+    if (statusTag) statusTag.textContent = type === 'error' ? 'ERROR' : type === 'success' ? 'OK' : 'INFO';
     if (statusTitle) statusTitle.textContent = title;
     if (statusMessage) statusMessage.textContent = message;
   }
