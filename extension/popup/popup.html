@@ -3,50 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vidur - Autonomous AI Browser Agent</title>
+  <title>Vidur - Autonomous Browser Agent & Privacy Guard</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="popup-container">
+  <div class="sidepanel-container">
     <!-- Header -->
     <header class="header">
       <div class="logo-group">
         <div class="logo-badge">V</div>
         <div>
           <h1 class="app-title">Vidur</h1>
-          <span class="app-subtitle">Autonomous Web Agent & Vault Guard</span>
+          <span class="app-subtitle">Zero-Leak Autonomous Agent</span>
         </div>
       </div>
       <div class="header-right">
+        <!-- Demo Mode Toggle -->
+        <label class="demo-toggle-label" title="Enable Demo Mode to use pre-recorded mock planner if offline or on flaky wifi">
+          <input type="checkbox" id="demoModeToggle" class="demo-toggle-checkbox" />
+          <span class="demo-toggle-switch"></span>
+          <span class="demo-toggle-text">Demo</span>
+        </label>
+        <!-- Vault Mini Badge -->
         <div id="vaultStatusIndicator" class="vault-mini-badge locked" title="Vault status">
           <span class="vault-mini-icon">🔒</span>
-          <span id="vaultMiniText">Vault Locked</span>
+          <span id="vaultMiniText">Locked</span>
         </div>
-        <span class="badge-version">v1.3.0</span>
       </div>
     </header>
 
     <!-- Navigation Tabs -->
     <nav class="nav-tabs">
-      <button id="navAgentTab" class="tab-btn active" type="button">
-        <span class="tab-icon">🤖</span>
-        <span>Agent</span>
+      <button id="navTaskTab" class="tab-btn active" type="button">
+        <span class="tab-icon">⚡</span>
+        <span>Task</span>
+      </button>
+      <button id="navPrivacyTab" class="tab-btn" type="button">
+        <span class="tab-icon">🛡️</span>
+        <span>Privacy</span>
       </button>
       <button id="navVaultTab" class="tab-btn" type="button">
         <span class="tab-icon">🔐</span>
-        <span>Profile Vault</span>
+        <span>Vault</span>
       </button>
-      <button id="navSchemaTab" class="tab-btn" type="button">
-        <span class="tab-icon">📸</span>
-        <span>Screen Schema</span>
+      <button id="navPipelineBtn" class="tab-btn-mini" type="button" title="View 5-Stage How It Works Pipeline">
+        <span class="tab-icon">ℹ️</span>
       </button>
     </nav>
 
-    <!-- TAB 1: AUTONOMOUS AGENT -->
-    <main id="agentTabContent" class="tab-content active">
+    <!-- TAB 1: TASK (Agent Execution) -->
+    <main id="taskTabContent" class="tab-content active">
       <!-- Task Input Card -->
       <section class="card task-card">
-        <label for="taskInput" class="task-label">Automation Task / Goal</label>
+        <div class="card-header-row">
+          <label for="taskInput" class="task-label">Automation Goal / Task</label>
+          <span id="demoModePill" class="demo-active-pill" style="display: none;">Demo Mode Active</span>
+        </div>
+
         <div class="task-input-wrapper">
           <textarea
             id="taskInput"
@@ -56,10 +69,12 @@
           >search for wireless headphones</textarea>
         </div>
 
+        <!-- 3 Live Demo Presets -->
         <div class="task-presets">
           <span class="presets-label">Presets:</span>
           <button class="preset-pill" type="button" data-task="search for wireless headphones">🔍 Search Headphones</button>
           <button class="preset-pill" type="button" data-task="log in with my account">🔑 Login Form</button>
+          <button class="preset-pill" type="button" data-task="submit enterprise inquiry for our team">📝 Contact Form</button>
         </div>
 
         <div class="agent-actions">
@@ -84,13 +99,13 @@
         <div class="approval-header">
           <span class="approval-warning-icon">⚠️</span>
           <div>
-            <span class="approval-title">Human Approval Required</span>
-            <p id="approvalReason" class="approval-desc">The agent wants to perform a sensitive submit action.</p>
+            <span class="approval-title">Human-in-the-Loop Approval</span>
+            <p id="approvalReason" class="approval-desc">The agent paused before executing a sensitive submit/payment operation.</p>
           </div>
         </div>
         <div id="approvalActionDetails" class="approval-action-box">
           <span id="approvalActionType" class="approval-type-tag">CLICK</span>
-          <span id="approvalActionLabel" class="approval-label-text">Submit Button</span>
+          <span id="approvalActionLabel" class="approval-label-text">Submit Action</span>
         </div>
         <div class="approval-buttons">
           <button id="approveActionBtn" class="approval-btn approve" type="button">
@@ -113,7 +128,7 @@
         </div>
       </section>
 
-      <!-- Live Agent Log Feed -->
+      <!-- Live Agent Activity Feed -->
       <section class="card agent-log-card">
         <div class="card-header">
           <div class="header-with-badge">
@@ -131,7 +146,66 @@
       </section>
     </main>
 
-    <!-- TAB 2: PROFILE VAULT -->
+    <!-- TAB 2: PRIVACY (Side-by-Side Raw vs. Sanitized Comparison) -->
+    <main id="privacyTabContent" class="tab-content" style="display: none;">
+      <!-- Capture / Refresh Button -->
+      <button id="captureBtn" class="capture-button" type="button">
+        <svg id="cameraIcon" class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+          <circle cx="12" cy="13" r="4"></circle>
+        </svg>
+        <span id="captureSpinner" class="spinner" style="display: none;"></span>
+        <span id="btnText">Capture & Inspect Privacy Schema</span>
+      </button>
+
+      <!-- Status Alert -->
+      <div id="statusAlert" class="alert-box" style="display: none;">
+        <span id="statusIcon" class="alert-icon">ℹ️</span>
+        <div class="alert-content">
+          <span id="statusTitle" class="alert-title"></span>
+          <span id="statusMessage" class="alert-message"></span>
+        </div>
+      </div>
+
+      <!-- Privacy Stats Banner -->
+      <section id="privacyStatsBanner" class="privacy-banner" style="display: none;">
+        <div class="privacy-banner-left">
+          <span class="shield-icon">🛡️</span>
+          <div>
+            <span id="privacyTitle" class="privacy-title">Privacy Guard Active</span>
+            <p id="privacySubtitle" class="privacy-desc">Sensitive PII values redacted into scoped tokens locally before cloud transmission.</p>
+          </div>
+        </div>
+        <div id="piiCategoryPills" class="pii-pills-container"></div>
+      </section>
+
+      <!-- Side-by-Side Schema Comparison Grid -->
+      <section id="sideBySideSection" class="side-by-side-section" style="display: none;">
+        <!-- Left: Raw Original Schema -->
+        <div class="card schema-compare-card raw-card">
+          <div class="compare-card-header raw-header">
+            <span class="compare-title">⚠️ RAW DOM SCHEMA</span>
+            <span class="compare-tag raw-tag">On-Device Only</span>
+          </div>
+          <div class="compare-json-wrapper">
+            <pre class="json-pre"><code id="rawJsonCode" class="json-code raw-code"></code></pre>
+          </div>
+        </div>
+
+        <!-- Right: Sanitized Cloud-Safe Schema -->
+        <div class="card schema-compare-card sanitized-card">
+          <div class="compare-card-header sanitized-header">
+            <span class="compare-title">🔒 SANITIZED SCHEMA</span>
+            <span class="compare-tag sanitized-tag">Cloud LLM Safe</span>
+          </div>
+          <div class="compare-json-wrapper">
+            <pre class="json-pre"><code id="sanitizedJsonCode" class="json-code sanitized-code"></code></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- TAB 3: PROFILE VAULT -->
     <main id="vaultTabContent" class="tab-content" style="display: none;">
       <!-- Vault Lock/Unlock Card -->
       <section class="card vault-auth-card">
@@ -152,7 +226,7 @@
               id="vaultPassphraseInput"
               type="password"
               class="text-input"
-              placeholder="Enter master passphrase..."
+              placeholder="Enter passphrase..."
             />
             <button id="unlockVaultBtn" class="action-btn" type="button">Unlock</button>
             <button id="lockVaultBtn" class="action-btn secondary" type="button" style="display: none;">Lock</button>
@@ -206,93 +280,82 @@
       </section>
     </main>
 
-    <!-- TAB 3: SCREEN SCHEMA & CAPTURE -->
-    <main id="schemaTabContent" class="tab-content" style="display: none;">
-      <!-- Capture Action Button -->
-      <button id="captureBtn" class="capture-button" type="button">
-        <svg id="cameraIcon" class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-          <circle cx="12" cy="13" r="4"></circle>
-        </svg>
-        <span id="captureSpinner" class="spinner" style="display: none;"></span>
-        <span id="btnText">Capture Current Viewport</span>
-      </button>
+    <!-- HOW IT WORKS PIPELINE MODAL / PANEL -->
+    <div id="pipelineModal" class="pipeline-modal-backdrop" style="display: none;">
+      <div class="pipeline-modal-card">
+        <div class="pipeline-modal-header">
+          <div class="pipeline-title-group">
+            <span class="pipeline-icon">⚡</span>
+            <h3 class="pipeline-title">How Vidur Works: 5-Stage Pipeline</h3>
+          </div>
+          <button id="closePipelineBtn" class="close-modal-btn" type="button">✕</button>
+        </div>
 
-      <!-- Status Alert -->
-      <div id="statusAlert" class="alert-box" style="display: none;">
-        <span id="statusIcon" class="alert-icon">ℹ️</span>
-        <div class="alert-content">
-          <span id="statusTitle" class="alert-title"></span>
-          <span id="statusMessage" class="alert-message"></span>
+        <div class="pipeline-stages-container">
+          <!-- Stage 1 -->
+          <div class="pipeline-stage-box">
+            <div class="stage-num">1</div>
+            <div class="stage-info">
+              <span class="stage-name">Viewport Capture</span>
+              <span class="stage-desc">Captures visual tab screenshot and DOM tree</span>
+            </div>
+          </div>
+
+          <!-- Stage 2 -->
+          <div class="pipeline-stage-box">
+            <div class="stage-num">2</div>
+            <div class="stage-info">
+              <span class="stage-name">Accessibility Tree + OCR</span>
+              <span class="stage-desc">Builds unified structural Screen Schema with IoU deduplication</span>
+            </div>
+          </div>
+
+          <!-- PRIVACY BOUNDARY (THE CORE DIFFERENTIATOR) -->
+          <div class="privacy-boundary-banner">
+            <div class="boundary-lock-pulse">🔒</div>
+            <div class="boundary-text">
+              <span class="boundary-title">ZERO-LEAK PRIVACY BOUNDARY</span>
+              <span class="boundary-desc">Raw PII is stripped. Only tokens like {{FIELD:EMAIL_1}} leave the device.</span>
+            </div>
+          </div>
+
+          <!-- Stage 3 -->
+          <div class="pipeline-stage-box">
+            <div class="stage-num">3</div>
+            <div class="stage-info">
+              <span class="stage-name">Client-Side Sanitization</span>
+              <span class="stage-desc">Luhn check, regex, autocomplete, and IndexedDB vault map</span>
+            </div>
+          </div>
+
+          <!-- Stage 4 -->
+          <div class="pipeline-stage-box">
+            <div class="stage-num">4</div>
+            <div class="stage-info">
+              <span class="stage-name">AI Action Reasoning</span>
+              <span class="stage-desc">Claude 3.5 Sonnet / Reasoner plans action JSON without seeing PII</span>
+            </div>
+          </div>
+
+          <!-- Stage 5 -->
+          <div class="pipeline-stage-box">
+            <div class="stage-num">5</div>
+            <div class="stage-info">
+              <span class="stage-name">On-Device Vault Execution</span>
+              <span class="stage-desc">Resolves tokens locally via WebCrypto vault & executes with safety gates</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pipeline-modal-footer">
+          <span>Pitch Guide: Vidur gives AI autonomous power without trusting it with your credentials.</span>
         </div>
       </div>
-
-      <!-- Results Section -->
-      <section id="resultsSection" class="results-section" style="display: none;">
-        <div class="metrics-bar">
-          <div class="metric-pill">
-            <span class="metric-dot"></span>
-            <span id="elementCountBadge" class="metric-text">0 Elements</span>
-          </div>
-          <div class="metric-breakdown">
-            <span id="domCountBadge" class="badge-pill dom-pill">0 DOM</span>
-            <span id="ocrCountBadge" class="badge-pill ocr-pill">0 OCR</span>
-          </div>
-          <span id="viewportBadge" class="metric-subtext"></span>
-        </div>
-
-        <div id="privacyBanner" class="privacy-banner" style="display: none;">
-          <div class="privacy-banner-left">
-            <span class="shield-icon">🛡️</span>
-            <div>
-              <span id="privacyTitle" class="privacy-title">Privacy Guard Active</span>
-              <p id="privacySubtitle" class="privacy-desc">Sensitive values sanitized locally before cloud transmission.</p>
-            </div>
-          </div>
-          <div id="piiCategoryPills" class="pii-pills-container"></div>
-        </div>
-
-        <div class="card screenshot-card">
-          <div class="card-header">
-            <span class="card-title">Viewport Screenshot</span>
-            <button id="viewFullImageBtn" class="mini-action-btn" type="button">Full View</button>
-          </div>
-          <div class="image-wrapper">
-            <img id="screenshotImg" class="screenshot-img" alt="Captured Viewport" />
-          </div>
-        </div>
-
-        <div class="card json-card">
-          <details id="jsonDetails" open>
-            <summary class="json-summary">
-              <div class="summary-left">
-                <svg class="chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-                <span class="card-title">Screen Schema View</span>
-              </div>
-              <button id="copyJsonBtn" class="mini-action-btn" type="button">Copy JSON</button>
-            </summary>
-
-            <div class="view-toggle-bar">
-              <span class="toggle-label">Preview Mode:</span>
-              <div class="segmented-control">
-                <button id="viewSanitizedBtn" class="segment-btn active" type="button">🔒 Sanitized</button>
-                <button id="viewRawBtn" class="segment-btn" type="button">⚠️ Raw</button>
-              </div>
-            </div>
-
-            <div class="json-content-wrapper">
-              <pre class="json-pre"><code id="jsonContent" class="json-code"></code></pre>
-            </div>
-          </details>
-        </div>
-      </section>
-    </main>
+    </div>
 
     <!-- Footer -->
     <footer class="footer">
-      <span>Vidur AI Monorepo • Autonomous Browser Agent</span>
+      <span>Vidur AI Monorepo • Autonomous Web Agent</span>
     </footer>
   </div>
 

@@ -1,7 +1,7 @@
 /**
  * Vidur Extension - Autonomous Orchestration Loop
  * Coordinates: Capture -> Sanitize -> Plan (/plan-action) -> Execute Actions -> Settle -> Repeat
- * Features a 15-iteration hard cap, human-in-the-loop safety approvals, and live event broadcasting.
+ * Features Demo Mode offline fallback, stale element recovery, and live event broadcasting.
  */
 
 const MAX_LOOP_ITERATIONS = 15;
@@ -11,14 +11,155 @@ const DEFAULT_SERVER_URL = 'http://localhost:3000/plan-action';
 // Orchestrator State
 let activeLoop = null;
 
+/**
+ * Offline Mock Planner: Generates realistic action plans when Demo Mode is active
+ * or when the backend server is unreachable.
+ */
+function generateOfflineMockPlan(task, sanitizedSchema, actionHistory = []) {
+  const elements = sanitizedSchema?.elements || [];
+  const lowerTask = (task || '').toLowerCase();
+
+  // 1. Search Scenarios
+  if (lowerTask.includes('search') || lowerTask.includes('find') || lowerTask.includes('look for')) {
+    const searchMatch = task.match(/(?:search(?:\s+for)?|find|look\s+for)\s+["']?([^"']+)["']?/i);
+    const searchQuery = searchMatch ? searchMatch[1].trim() : 'wireless headphones';
+
+    const searchInput = elements.find(
+      (e) =>
+        e.type === 'search' ||
+        (e.tag === 'input' && /search|query|find|q/i.test(e.label || e.id || '')) ||
+        (e.tag === 'input' && e.type === 'text')
+    );
+
+    const submitBtn = elements.find(
+      (e) =>
+        (e.tag === 'button' || (e.tag === 'input' && e.type === 'submit')) &&
+        (/search|find|go|submit/i.test(e.label || '') || e.type === 'submit')
+    );
+
+    const actions = [];
+    if (searchInput) {
+      actions.push({
+        type: 'type',
+        elementId: searchInput.id,
+        value: searchQuery
+      });
+    }
+    if (submitBtn) {
+      actions.push({
+        type: 'click',
+        elementId: submitBtn.id,
+        value: null
+      });
+    }
+
+    return {
+      reasoning: `[Demo Mode] Identified search input (${searchInput?.id || 'el_0'}) and submit button. Typed "${searchQuery}" and triggered search.`,
+      done: actions.length === 0,
+      actions: actions
+    };
+  }
+
+  // 2. Login Scenarios
+  if (
+    lowerTask.includes('log in') ||
+    lowerTask.includes('login') ||
+    lowerTask.includes('sign in') ||
+    lowerTask.includes('authenticate')
+  ) {
+    const emailInput = elements.find(
+      (e) => e.type === 'email' || /email|username/i.test(e.label || '')
+    );
+    const passwordInput = elements.find(
+      (e) => e.type === 'password' || /password/i.test(e.label || '')
+    );
+    const submitBtn = elements.find(
+      (e) => e.type === 'submit' || /sign in|log in|submit/i.test(e.label || '')
+    );
+
+    const actions = [];
+    if (emailInput) {
+      actions.push({
+        type: 'type',
+        elementId: emailInput.id,
+        value: emailInput.value && emailInput.value.startsWith('{{FIELD:') ? emailInput.value : '{{FIELD:EMAIL_1}}'
+      });
+    }
+    if (passwordInput) {
+      actions.push({
+        type: 'type',
+        elementId: passwordInput.id,
+        value: passwordInput.value && passwordInput.value.startsWith('{{FIELD:') ? passwordInput.value : '{{FIELD:PASSWORD_1}}'
+      });
+    }
+    if (submitBtn) {
+      actions.push({
+        type: 'click',
+        elementId: submitBtn.id,
+        value: null
+      });
+    }
+
+    return {
+      reasoning: '[Demo Mode] Detected login form. Populated credentials using privacy placeholder tokens {{FIELD:EMAIL_1}} and {{FIELD:PASSWORD_1}}, then clicked submit.',
+      done: false,
+      actions: actions
+    };
+  }
+
+  // 3. Contact / Inquiry Scenarios
+  if (
+    lowerTask.includes('contact') ||
+    lowerTask.includes('inquiry') ||
+    lowerTask.includes('form') ||
+    lowerTask.includes('support')
+  ) {
+    const actions = [];
+    const nameInput = elements.find((e) => /name/i.test(e.label || e.autocomplete || ''));
+    const emailInput = elements.find((e) => e.type === 'email' || /email/i.test(e.label || ''));
+    const phoneInput = elements.find((e) => e.type === 'tel' || /phone/i.test(e.label || ''));
+    const addressInput = elements.find((e) => /address/i.test(e.label || e.autocomplete || ''));
+    const messageInput = elements.find((e) => e.tag === 'textarea' || /message|details|inquiry/i.test(e.label || ''));
+    const submitBtn = elements.find((e) => e.type === 'submit' || /submit|send/i.test(e.label || ''));
+
+    if (nameInput) actions.push({ type: 'type', elementId: nameInput.id, value: '{{FIELD:NAME_1}}' });
+    if (emailInput) actions.push({ type: 'type', elementId: emailInput.id, value: '{{FIELD:EMAIL_1}}' });
+    if (phoneInput) actions.push({ type: 'type', elementId: phoneInput.id, value: '{{FIELD:PHONE_1}}' });
+    if (addressInput) actions.push({ type: 'type', elementId: addressInput.id, value: '{{FIELD:ADDRESS_1}}' });
+    if (messageInput) {
+      actions.push({
+        type: 'type',
+        elementId: messageInput.id,
+        value: 'Requesting enterprise security and autonomous browser automation demo for our team.'
+      });
+    }
+    if (submitBtn) actions.push({ type: 'click', elementId: submitBtn.id, value: null });
+
+    return {
+      reasoning: '[Demo Mode] Detected multi-field inquiry form. Populated profile tokens for Name, Email, Phone, Address, and entered project message.',
+      done: false,
+      actions: actions
+    };
+  }
+
+  // 4. Generic Fallback
+  const firstInteractive = elements.find((e) => ['button', 'input', 'a'].includes(e.tag));
+  return {
+    reasoning: `[Demo Mode] Analyzing viewport with ${elements.length} elements for goal: "${task}".`,
+    done: !firstInteractive,
+    actions: firstInteractive ? [{ type: 'click', elementId: firstInteractive.id, value: null }] : []
+  };
+}
+
 class AgentOrchestrator {
-  constructor({ task, tabId, serverUrl = DEFAULT_SERVER_URL }) {
+  constructor({ task, tabId, serverUrl = DEFAULT_SERVER_URL, demoMode = false }) {
     this.task = task;
     this.tabId = tabId;
     this.serverUrl = serverUrl;
+    this.demoMode = demoMode;
     this.iteration = 0;
     this.actionHistory = [];
-    this.status = 'IDLE'; // 'IDLE' | 'RUNNING' | 'AWAITING_APPROVAL' | 'PAUSED' | 'COMPLETED' | 'ERROR' | 'STOPPED'
+    this.status = 'IDLE';
     this.currentPlan = null;
     this.pendingApprovalResolver = null;
     this.logs = [];
@@ -43,14 +184,13 @@ class AgentOrchestrator {
     try {
       if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
         chrome.runtime.sendMessage(event, () => {
-          // Ignore "Receiving end does not exist" if popup is closed
           if (chrome.runtime.lastError) {
             // Silently handled
           }
         });
       }
     } catch {
-      // In non-extension context
+      // Non-extension context
     }
 
     console.log(`[Vidur Orchestrator] [${this.status}] [Iter ${this.iteration}]`, type, payload);
@@ -96,7 +236,7 @@ class AgentOrchestrator {
         this.emitEvent('AGENT_STATUS', { status: 'CAPTURING', iteration: this.iteration, message: 'Capturing viewport and extracting DOM...' });
         const captureResult = await this.captureTab();
 
-        // 2. OCR PERCEPTION & SCREEN SCHEMA (Non-blocking with fast timeout)
+        // 2. OCR PERCEPTION & SCREEN SCHEMA (Non-blocking with 2.5s timeout)
         let ocrResults = [];
         if (typeof runOCR === 'function' && captureResult.screenshot) {
           try {
@@ -142,7 +282,7 @@ class AgentOrchestrator {
           });
         }
 
-        // 4. REASONING ENDPOINT (/plan-action)
+        // 4. REASONING ENDPOINT (/plan-action) OR DEMO MODE
         this.emitEvent('AGENT_STATUS', { status: 'PLANNING', iteration: this.iteration, message: 'Consulting reasoning engine...' });
         const plan = await this.fetchActionPlan(sanitizedSchema);
         this.currentPlan = plan;
@@ -161,7 +301,7 @@ class AgentOrchestrator {
           this.emitEvent('AGENT_STATUS', {
             status: 'COMPLETED',
             iteration: this.iteration,
-            message: `🎉 Goal achieved in ${this.iteration} iterations!`
+            message: `🎉 Goal achieved in ${this.iteration} iteration(s)!`
           });
           this.emitEvent('AGENT_LOG', {
             logType: 'SUCCESS',
@@ -257,6 +397,13 @@ class AgentOrchestrator {
               action: action,
               result: execResult,
               message: `▶ [${action.type.toUpperCase()}] #${action.elementId}${tokenMsg}`
+            });
+          } else if (execResult.staleElement) {
+            this.emitEvent('AGENT_LOG', {
+              logType: 'ACTION_SKIPPED',
+              action: action,
+              error: execResult.error,
+              message: `⚠️ Stale Element #${action.elementId}: Page changed dynamically, re-capturing...`
             });
           } else if (execResult.skipped) {
             this.emitEvent('AGENT_LOG', {
@@ -405,36 +552,55 @@ class AgentOrchestrator {
   }
 
   /**
-   * Calls POST /plan-action reasoning endpoint on server.
+   * Calls POST /plan-action reasoning endpoint on server with automatic Demo Mode fallback.
    */
   async fetchActionPlan(sanitizedSchema) {
-    const res = await fetch(this.serverUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        task: this.task,
-        sanitizedSchema: sanitizedSchema,
-        actionHistory: this.actionHistory
-      })
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Planner returned HTTP ${res.status}: ${errText}`);
+    if (this.demoMode) {
+      console.log('[Vidur Orchestrator] Demo Mode enabled. Generating offline mock plan...');
+      return generateOfflineMockPlan(this.task, sanitizedSchema, this.actionHistory);
     }
 
-    return await res.json();
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      const res = await fetch(this.serverUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          task: this.task,
+          sanitizedSchema: sanitizedSchema,
+          actionHistory: this.actionHistory
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+
+      return await res.json();
+    } catch (err) {
+      console.warn('[Vidur Orchestrator] Server reasoning error or timeout, falling back to Demo Mode planner:', err.message);
+      this.emitEvent('AGENT_LOG', {
+        logType: 'INFO',
+        message: '📡 Backend unreachable. Seamlessly using Demo Mode action planner.'
+      });
+      return generateOfflineMockPlan(this.task, sanitizedSchema, this.actionHistory);
+    }
   }
 }
 
 /**
  * Controller functions
  */
-function startOrchestration({ task, tabId, serverUrl }) {
+function startOrchestration({ task, tabId, serverUrl, demoMode = false }) {
   if (activeLoop && (activeLoop.status === 'RUNNING' || activeLoop.status === 'AWAITING_APPROVAL')) {
     activeLoop.stop();
   }
-  activeLoop = new AgentOrchestrator({ task, tabId, serverUrl });
+  activeLoop = new AgentOrchestrator({ task, tabId, serverUrl, demoMode });
   activeLoop.start();
   return activeLoop;
 }
@@ -459,6 +625,7 @@ function getActiveLoop() {
 if (typeof window !== 'undefined') {
   window.VidurOrchestrator = {
     AgentOrchestrator,
+    generateOfflineMockPlan,
     startOrchestration,
     stopOrchestration,
     approvePendingAction,
@@ -467,6 +634,7 @@ if (typeof window !== 'undefined') {
 } else if (typeof globalThis !== 'undefined') {
   globalThis.VidurOrchestrator = {
     AgentOrchestrator,
+    generateOfflineMockPlan,
     startOrchestration,
     stopOrchestration,
     approvePendingAction,
@@ -477,6 +645,7 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     AgentOrchestrator,
+    generateOfflineMockPlan,
     startOrchestration,
     stopOrchestration,
     approvePendingAction,

@@ -1,32 +1,98 @@
 /**
- * Vidur Extension - Popup Controller
+ * Vidur Extension - Side Panel & Popup Controller
  * Coordinates Autonomous Agent Loop, WebCrypto Encrypted Profile Vault,
- * and Screen Schema Capture Layer.
+ * Side-by-Side Privacy Redaction Schema, Demo Mode Toggle, and Pipeline Pitch Modal.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // --- TAB NAVIGATION ---
-  const navAgentTab = document.getElementById('navAgentTab');
+  // --- 1. TAB NAVIGATION CONTROLLER ---
+  const navTaskTab = document.getElementById('navTaskTab');
+  const navPrivacyTab = document.getElementById('navPrivacyTab');
   const navVaultTab = document.getElementById('navVaultTab');
-  const navSchemaTab = document.getElementById('navSchemaTab');
+  const navPipelineBtn = document.getElementById('navPipelineBtn');
 
-  const agentTabContent = document.getElementById('agentTabContent');
+  const taskTabContent = document.getElementById('taskTabContent');
+  const privacyTabContent = document.getElementById('privacyTabContent');
   const vaultTabContent = document.getElementById('vaultTabContent');
-  const schemaTabContent = document.getElementById('schemaTabContent');
+  const pipelineModal = document.getElementById('pipelineModal');
+  const closePipelineBtn = document.getElementById('closePipelineBtn');
 
   function switchTab(activeNav, activeContent) {
-    [navAgentTab, navVaultTab, navSchemaTab].forEach((t) => t.classList.remove('active'));
-    [agentTabContent, vaultTabContent, schemaTabContent].forEach((c) => (c.style.display = 'none'));
+    [navTaskTab, navPrivacyTab, navVaultTab].forEach((t) => t && t.classList.remove('active'));
+    [taskTabContent, privacyTabContent, vaultTabContent].forEach((c) => {
+      if (c) c.style.display = 'none';
+    });
 
-    activeNav.classList.add('active');
-    activeContent.style.display = 'flex';
+    if (activeNav) activeNav.classList.add('active');
+    if (activeContent) activeContent.style.display = 'flex';
   }
 
-  navAgentTab.addEventListener('click', () => switchTab(navAgentTab, agentTabContent));
-  navVaultTab.addEventListener('click', () => switchTab(navVaultTab, vaultTabContent));
-  navSchemaTab.addEventListener('click', () => switchTab(navSchemaTab, schemaTabContent));
+  if (navTaskTab) navTaskTab.addEventListener('click', () => switchTab(navTaskTab, taskTabContent));
+  if (navPrivacyTab) navPrivacyTab.addEventListener('click', () => switchTab(navPrivacyTab, privacyTabContent));
+  if (navVaultTab) navVaultTab.addEventListener('click', () => switchTab(navVaultTab, vaultTabContent));
 
-  // --- VAULT ELEMENTS & CONTROLLER ---
+  // 5-Stage Pipeline Modal Controls
+  if (navPipelineBtn && pipelineModal) {
+    navPipelineBtn.addEventListener('click', () => {
+      pipelineModal.style.display = 'flex';
+    });
+  }
+
+  if (closePipelineBtn && pipelineModal) {
+    closePipelineBtn.addEventListener('click', () => {
+      pipelineModal.style.display = 'none';
+    });
+  }
+
+  if (pipelineModal) {
+    pipelineModal.addEventListener('click', (e) => {
+      if (e.target === pipelineModal) {
+        pipelineModal.style.display = 'none';
+      }
+    });
+  }
+
+  // --- 2. DEMO MODE TOGGLE ---
+  const demoModeToggle = document.getElementById('demoModeToggle');
+  const demoModePill = document.getElementById('demoModePill');
+
+  function updateDemoModeUI(enabled) {
+    if (demoModeToggle) demoModeToggle.checked = enabled;
+    if (demoModePill) demoModePill.style.display = enabled ? 'inline-block' : 'none';
+  }
+
+  // Load persisted demo mode state
+  try {
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['vidur_demo_mode'], (res) => {
+        const isDemo = res && res.vidur_demo_mode === true;
+        updateDemoModeUI(isDemo);
+      });
+    } else {
+      const stored = localStorage.getItem('vidur_demo_mode');
+      updateDemoModeUI(stored === 'true');
+    }
+  } catch {
+    // Local fallback
+  }
+
+  if (demoModeToggle) {
+    demoModeToggle.addEventListener('change', () => {
+      const enabled = demoModeToggle.checked;
+      updateDemoModeUI(enabled);
+      try {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ vidur_demo_mode: enabled });
+        } else {
+          localStorage.setItem('vidur_demo_mode', String(enabled));
+        }
+      } catch {
+        // Storage warning
+      }
+    });
+  }
+
+  // --- 3. VAULT CONTROLLER & STATE ---
   const vaultStatusIndicator = document.getElementById('vaultStatusIndicator');
   const vaultMiniText = document.getElementById('vaultMiniText');
   const vaultAuthStatusIcon = document.getElementById('vaultAuthStatusIcon');
@@ -68,125 +134,141 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function updateVaultUI() {
+    if (!vaultStatusIndicator) return;
+
     if (isUnlocked) {
       vaultStatusIndicator.className = 'vault-mini-badge unlocked';
-      vaultMiniText.textContent = 'Vault Unlocked';
-      vaultAuthStatusIcon.textContent = '🔓';
-      vaultAuthTitle.textContent = 'Profile Vault (Unlocked)';
-      vaultAuthDesc.textContent = 'Your encrypted profile data is ready for autonomous token resolution.';
-      unlockVaultBtn.style.display = 'none';
-      lockVaultBtn.style.display = 'inline-block';
-      vaultProfileSection.style.display = 'flex';
-      vaultPassphraseInput.disabled = true;
-      vaultAuthError.style.display = 'none';
+      if (vaultMiniText) vaultMiniText.textContent = 'Unlocked';
+      if (vaultAuthStatusIcon) vaultAuthStatusIcon.textContent = '🔓';
+      if (vaultAuthTitle) vaultAuthTitle.textContent = 'Profile Vault (Unlocked)';
+      if (vaultAuthDesc) vaultAuthDesc.textContent = 'Encrypted profile data is active and ready for local token resolution.';
+      if (unlockVaultBtn) unlockVaultBtn.style.display = 'none';
+      if (lockVaultBtn) lockVaultBtn.style.display = 'inline-block';
+      if (vaultProfileSection) vaultProfileSection.style.display = 'flex';
+      if (vaultPassphraseInput) vaultPassphraseInput.disabled = true;
+      if (vaultAuthError) vaultAuthError.style.display = 'none';
 
       // Load profile fields
       const profile = (typeof VidurVault !== 'undefined' ? VidurVault.getDecryptedProfile() : null) || {};
-      vaultName.value = profile.name || '';
-      vaultEmail.value = profile.email || '';
-      vaultPhone.value = profile.phone || '';
-      vaultAddress.value = profile.address || '';
-      vaultPassword.value = profile.password || '';
-      vaultGovtId.value = profile.govtId || profile.aadhaar || '';
+      if (vaultName) vaultName.value = profile.name || '';
+      if (vaultEmail) vaultEmail.value = profile.email || '';
+      if (vaultPhone) vaultPhone.value = profile.phone || '';
+      if (vaultAddress) vaultAddress.value = profile.address || '';
+      if (vaultPassword) vaultPassword.value = profile.password || '';
+      if (vaultGovtId) vaultGovtId.value = profile.govtId || profile.aadhaar || '';
     } else {
       vaultStatusIndicator.className = 'vault-mini-badge locked';
-      vaultMiniText.textContent = isConfigured ? 'Vault Locked' : 'Vault Not Set';
-      vaultAuthStatusIcon.textContent = '🔒';
-      vaultAuthTitle.textContent = isConfigured ? 'Profile Vault (Locked)' : 'Set Up Profile Vault';
-      vaultAuthDesc.textContent = isConfigured
-        ? 'Enter your passphrase to unlock your profile data.'
-        : 'Choose a master passphrase to initialize your local encrypted vault.';
-      unlockVaultBtn.textContent = isConfigured ? 'Unlock' : 'Create Vault';
-      unlockVaultBtn.style.display = 'inline-block';
-      lockVaultBtn.style.display = 'none';
-      vaultProfileSection.style.display = 'none';
-      vaultPassphraseInput.disabled = false;
+      if (vaultMiniText) vaultMiniText.textContent = isConfigured ? 'Locked' : 'Not Set';
+      if (vaultAuthStatusIcon) vaultAuthStatusIcon.textContent = '🔒';
+      if (vaultAuthTitle) vaultAuthTitle.textContent = isConfigured ? 'Profile Vault (Locked)' : 'Set Up Profile Vault';
+      if (vaultAuthDesc) {
+        vaultAuthDesc.textContent = isConfigured
+          ? 'Enter your passphrase to unlock your profile data.'
+          : 'Choose a master passphrase to initialize your local encrypted vault.';
+      }
+      if (unlockVaultBtn) {
+        unlockVaultBtn.textContent = isConfigured ? 'Unlock' : 'Create Vault';
+        unlockVaultBtn.style.display = 'inline-block';
+      }
+      if (lockVaultBtn) lockVaultBtn.style.display = 'none';
+      if (vaultProfileSection) vaultProfileSection.style.display = 'none';
+      if (vaultPassphraseInput) vaultPassphraseInput.disabled = false;
     }
   }
 
-  unlockVaultBtn.addEventListener('click', async () => {
-    const passphrase = vaultPassphraseInput.value.trim();
-    if (!passphrase || passphrase.length < 4) {
-      vaultAuthError.textContent = 'Passphrase must be at least 4 characters.';
-      vaultAuthError.style.display = 'block';
-      return;
-    }
-
-    try {
-      vaultAuthError.style.display = 'none';
-      if (!isConfigured) {
-        // Initial setup
-        const defaultProfile = {
-          name: 'Jane Doe',
-          email: 'developer@vidur.ai',
-          phone: '+1 555-0199',
-          address: '123 Tech Avenue, Bengaluru',
-          password: 'SuperSecretPassword123!',
-          govtId: '2345 6789 0123'
-        };
-
-        if (typeof VidurVault !== 'undefined') {
-          await VidurVault.setupVault(passphrase, defaultProfile);
-        } else {
-          await sendRuntimeMessage({ type: 'SETUP_VAULT', passphrase, profile: defaultProfile });
+  if (unlockVaultBtn) {
+    unlockVaultBtn.addEventListener('click', async () => {
+      const passphrase = vaultPassphraseInput ? vaultPassphraseInput.value.trim() : '';
+      if (!passphrase || passphrase.length < 4) {
+        if (vaultAuthError) {
+          vaultAuthError.textContent = 'Passphrase must be at least 4 characters.';
+          vaultAuthError.style.display = 'block';
         }
-        isConfigured = true;
-        isUnlocked = true;
-      } else {
-        // Unlock existing
-        if (typeof VidurVault !== 'undefined') {
-          await VidurVault.unlockVault(passphrase);
-        } else {
-          await sendRuntimeMessage({ type: 'UNLOCK_VAULT', passphrase });
-        }
-        isUnlocked = true;
+        return;
       }
 
-      updateVaultUI();
-    } catch (err) {
-      vaultAuthError.textContent = err.message || 'Incorrect passphrase.';
-      vaultAuthError.style.display = 'block';
-    }
-  });
+      try {
+        if (vaultAuthError) vaultAuthError.style.display = 'none';
+        if (!isConfigured) {
+          // Initial setup with demo values
+          const defaultProfile = {
+            name: 'Jane Doe',
+            email: 'developer@vidur.ai',
+            phone: '+1 555-0199',
+            address: '123 Tech Avenue, Bengaluru',
+            password: 'SuperSecretPassword123!',
+            govtId: '2345 6789 0123'
+          };
 
-  lockVaultBtn.addEventListener('click', () => {
-    if (typeof VidurVault !== 'undefined') {
-      VidurVault.lockVault();
-    } else {
-      sendRuntimeMessage({ type: 'LOCK_VAULT' });
-    }
-    isUnlocked = false;
-    vaultPassphraseInput.value = '';
-    updateVaultUI();
-  });
+          if (typeof VidurVault !== 'undefined') {
+            await VidurVault.setupVault(passphrase, defaultProfile);
+          } else {
+            await sendRuntimeMessage({ type: 'SETUP_VAULT', passphrase, profile: defaultProfile });
+          }
+          isConfigured = true;
+          isUnlocked = true;
+        } else {
+          // Unlock existing
+          if (typeof VidurVault !== 'undefined') {
+            await VidurVault.unlockVault(passphrase);
+          } else {
+            await sendRuntimeMessage({ type: 'UNLOCK_VAULT', passphrase });
+          }
+          isUnlocked = true;
+        }
 
-  saveVaultProfileBtn.addEventListener('click', async () => {
-    const profile = {
-      name: vaultName.value.trim(),
-      email: vaultEmail.value.trim(),
-      phone: vaultPhone.value.trim(),
-      address: vaultAddress.value.trim(),
-      password: vaultPassword.value.trim(),
-      govtId: vaultGovtId.value.trim()
-    };
+        updateVaultUI();
+      } catch (err) {
+        if (vaultAuthError) {
+          vaultAuthError.textContent = err.message || 'Incorrect passphrase.';
+          vaultAuthError.style.display = 'block';
+        }
+      }
+    });
+  }
 
-    try {
+  if (lockVaultBtn) {
+    lockVaultBtn.addEventListener('click', () => {
       if (typeof VidurVault !== 'undefined') {
-        await VidurVault.updateVaultProfile(profile);
+        VidurVault.lockVault();
       } else {
-        await sendRuntimeMessage({ type: 'UPDATE_VAULT_PROFILE', profile });
+        sendRuntimeMessage({ type: 'LOCK_VAULT' });
       }
+      isUnlocked = false;
+      if (vaultPassphraseInput) vaultPassphraseInput.value = '';
+      updateVaultUI();
+    });
+  }
 
-      saveVaultProfileBtn.textContent = '✅ Saved & Encrypted!';
-      setTimeout(() => {
-        saveVaultProfileBtn.innerHTML = '<span>Save & Encrypt Profile</span>';
-      }, 2000);
-    } catch (err) {
-      alert(`Failed to save vault: ${err.message}`);
-    }
-  });
+  if (saveVaultProfileBtn) {
+    saveVaultProfileBtn.addEventListener('click', async () => {
+      const profile = {
+        name: vaultName ? vaultName.value.trim() : '',
+        email: vaultEmail ? vaultEmail.value.trim() : '',
+        phone: vaultPhone ? vaultPhone.value.trim() : '',
+        address: vaultAddress ? vaultAddress.value.trim() : '',
+        password: vaultPassword ? vaultPassword.value.trim() : '',
+        govtId: vaultGovtId ? vaultGovtId.value.trim() : ''
+      };
 
-  // --- AGENT TAB CONTROLLER ---
+      try {
+        if (typeof VidurVault !== 'undefined') {
+          await VidurVault.updateVaultProfile(profile);
+        } else {
+          await sendRuntimeMessage({ type: 'UPDATE_VAULT_PROFILE', profile });
+        }
+
+        saveVaultProfileBtn.textContent = '✅ Saved & Encrypted!';
+        setTimeout(() => {
+          saveVaultProfileBtn.innerHTML = '<span>Save & Encrypt Profile</span>';
+        }, 2000);
+      } catch (err) {
+        alert(`Failed to save vault: ${err.message}`);
+      }
+    });
+  }
+
+  // --- 4. TASK TAB & AGENT LOOP CONTROLLER ---
   const taskInput = document.getElementById('taskInput');
   const startAgentBtn = document.getElementById('startAgentBtn');
   const startAgentBtnText = document.getElementById('startAgentBtnText');
@@ -213,42 +295,48 @@ document.addEventListener('DOMContentLoaded', async () => {
   let logEventsCount = 0;
   let isAgentRunning = false;
 
-  // Preset buttons
+  // Preset buttons handler
   document.querySelectorAll('.preset-pill').forEach((btn) => {
     btn.addEventListener('click', () => {
-      taskInput.value = btn.getAttribute('data-task') || '';
-      taskInput.focus();
+      if (taskInput) {
+        taskInput.value = btn.getAttribute('data-task') || '';
+        taskInput.focus();
+      }
     });
   });
 
   function setAgentRunning(running) {
     isAgentRunning = running;
     if (running) {
-      playIcon.style.display = 'none';
-      agentSpinner.style.display = 'inline-block';
-      startAgentBtnText.textContent = 'Agent Running...';
-      startAgentBtn.disabled = true;
-      stopAgentBtn.style.display = 'flex';
-      agentStatusBar.style.display = 'flex';
-      agentStatusDot.className = 'status-dot running';
-      agentStatusText.textContent = 'Agent active...';
+      if (playIcon) playIcon.style.display = 'none';
+      if (agentSpinner) agentSpinner.style.display = 'inline-block';
+      if (startAgentBtnText) startAgentBtnText.textContent = 'Agent Running...';
+      if (startAgentBtn) startAgentBtn.disabled = true;
+      if (stopAgentBtn) stopAgentBtn.style.display = 'flex';
+      if (agentStatusBar) agentStatusBar.style.display = 'flex';
+      if (agentStatusDot) agentStatusDot.className = 'status-dot running';
+      if (agentStatusText) agentStatusText.textContent = 'Agent active...';
     } else {
-      playIcon.style.display = 'inline-block';
-      agentSpinner.style.display = 'none';
-      startAgentBtnText.textContent = 'Start Autonomous Agent';
-      startAgentBtn.disabled = false;
-      stopAgentBtn.style.display = 'none';
-      approvalBanner.style.display = 'none';
+      if (playIcon) playIcon.style.display = 'inline-block';
+      if (agentSpinner) agentSpinner.style.display = 'none';
+      if (startAgentBtnText) startAgentBtnText.textContent = 'Start Autonomous Agent';
+      if (startAgentBtn) startAgentBtn.disabled = false;
+      if (stopAgentBtn) stopAgentBtn.style.display = 'none';
+      if (approvalBanner) approvalBanner.style.display = 'none';
     }
   }
 
   function appendLogItem(logData) {
+    if (!agentLogFeed) return;
+
     // Clear empty state
     const emptyState = agentLogFeed.querySelector('.empty-log-state');
     if (emptyState) emptyState.remove();
 
     logEventsCount++;
-    logCountBadge.textContent = `${logEventsCount} event${logEventsCount === 1 ? '' : 's'}`;
+    if (logCountBadge) {
+      logCountBadge.textContent = `${logEventsCount} event${logEventsCount === 1 ? '' : 's'}`;
+    }
 
     const item = document.createElement('div');
     const logType = logData.logType || 'INFO';
@@ -322,107 +410,125 @@ document.addEventListener('DOMContentLoaded', async () => {
     agentLogFeed.scrollTop = agentLogFeed.scrollHeight;
   }
 
-  clearLogBtn.addEventListener('click', () => {
-    logEventsCount = 0;
-    logCountBadge.textContent = '0 events';
-    agentLogFeed.innerHTML = `
-      <div class="empty-log-state">
-        <span class="empty-icon">⚡</span>
-        <span>Log cleared. Ready for next run.</span>
-      </div>
-    `;
-  });
+  if (clearLogBtn) {
+    clearLogBtn.addEventListener('click', () => {
+      logEventsCount = 0;
+      if (logCountBadge) logCountBadge.textContent = '0 events';
+      if (agentLogFeed) {
+        agentLogFeed.innerHTML = `
+          <div class="empty-log-state">
+            <span class="empty-icon">⚡</span>
+            <span>Log cleared. Ready for next run.</span>
+          </div>
+        `;
+      }
+    });
+  }
 
   // Start Agent Loop
-  startAgentBtn.addEventListener('click', async () => {
-    const task = taskInput.value.trim();
-    if (!task) {
-      alert('Please enter an automation task.');
-      return;
-    }
-
-    // Auto-unlock demo vault if not configured
-    if (!isUnlocked) {
-      try {
-        if (typeof VidurVault !== 'undefined') {
-          await VidurVault.setupVault('password123', {
-            name: 'Jane Doe',
-            email: 'developer@vidur.ai',
-            phone: '+1 555-0199',
-            address: '123 Tech Blvd',
-            password: 'SuperSecretPassword123!',
-            govtId: '2345 6789 0123'
-          });
-          isConfigured = true;
-          isUnlocked = true;
-          updateVaultUI();
-        }
-      } catch {
-        // Vault initialization note
-      }
-    }
-
-    setAgentRunning(true);
-    appendLogItem({
-      logType: 'START',
-      message: `🚀 Initiating autonomous loop for task: "${task}"`
-    });
-
-    chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
-      const activeTabId = tabs && tabs[0] ? tabs[0].id : null;
-      if (!activeTabId) {
-        setAgentRunning(false);
-        appendLogItem({ logType: 'ERROR', message: 'No active tab found. Please open a web page.' });
+  if (startAgentBtn) {
+    startAgentBtn.addEventListener('click', async () => {
+      const task = taskInput ? taskInput.value.trim() : '';
+      if (!task) {
+        alert('Please enter an automation task.');
         return;
       }
 
-      chrome.runtime.sendMessage({
-        type: 'START_AGENT',
-        task: task,
-        tabId: activeTabId
-      }, (resp) => {
-        if (chrome.runtime.lastError) {
-          console.warn('[Vidur Popup] Start Notice:', chrome.runtime.lastError.message);
-          appendLogItem({ logType: 'ERROR', message: `Communication error: ${chrome.runtime.lastError.message}` });
-          setAgentRunning(false);
-        } else if (resp && resp.status === 'error') {
-          setAgentRunning(false);
-          appendLogItem({ logType: 'ERROR', message: `Failed to start: ${resp.message}` });
+      // Auto-unlock demo vault if not configured
+      if (!isUnlocked) {
+        try {
+          if (typeof VidurVault !== 'undefined') {
+            await VidurVault.setupVault('password123', {
+              name: 'Jane Doe',
+              email: 'developer@vidur.ai',
+              phone: '+1 555-0199',
+              address: '123 Tech Blvd',
+              password: 'SuperSecretPassword123!',
+              govtId: '2345 6789 0123'
+            });
+            isConfigured = true;
+            isUnlocked = true;
+            updateVaultUI();
+          }
+        } catch {
+          // Vault auto-init notice
         }
+      }
+
+      const isDemoMode = demoModeToggle ? demoModeToggle.checked : false;
+
+      setAgentRunning(true);
+      appendLogItem({
+        logType: 'START',
+        message: `🚀 Initiating autonomous loop for task: "${task}" ${isDemoMode ? '[DEMO MODE ACTIVE]' : ''}`
+      });
+
+      chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
+        const activeTabId = tabs && tabs[0] ? tabs[0].id : null;
+        if (!activeTabId) {
+          setAgentRunning(false);
+          appendLogItem({ logType: 'ERROR', message: 'No active tab found. Please open a web page.' });
+          return;
+        }
+
+        chrome.runtime.sendMessage(
+          {
+            type: 'START_AGENT',
+            task: task,
+            tabId: activeTabId,
+            demoMode: isDemoMode
+          },
+          (resp) => {
+            if (chrome.runtime.lastError) {
+              console.warn('[Vidur Popup] Start Notice:', chrome.runtime.lastError.message);
+              appendLogItem({ logType: 'ERROR', message: `Communication error: ${chrome.runtime.lastError.message}` });
+              setAgentRunning(false);
+            } else if (resp && resp.status === 'error') {
+              setAgentRunning(false);
+              appendLogItem({ logType: 'ERROR', message: `Failed to start: ${resp.message}` });
+            }
+          }
+        );
       });
     });
-  });
+  }
 
   // Stop Agent Loop
-  stopAgentBtn.addEventListener('click', () => {
-    chrome.runtime.sendMessage({ type: 'STOP_AGENT' });
-    if (typeof stopOrchestration === 'function') {
-      stopOrchestration();
-    }
-    setAgentRunning(false);
-    agentStatusDot.className = 'status-dot';
-    agentStatusText.textContent = 'Agent Stopped';
-    appendLogItem({ logType: 'INFO', message: '🛑 Agent loop stopped.' });
-  });
+  if (stopAgentBtn) {
+    stopAgentBtn.addEventListener('click', () => {
+      chrome.runtime.sendMessage({ type: 'STOP_AGENT' });
+      if (typeof stopOrchestration === 'function') {
+        stopOrchestration();
+      }
+      setAgentRunning(false);
+      if (agentStatusDot) agentStatusDot.className = 'status-dot';
+      if (agentStatusText) agentStatusText.textContent = 'Agent Stopped';
+      appendLogItem({ logType: 'INFO', message: '🛑 Agent loop stopped.' });
+    });
+  }
 
   // Human-in-the-Loop Approval Buttons
-  approveActionBtn.addEventListener('click', () => {
-    approvalBanner.style.display = 'none';
-    chrome.runtime.sendMessage({ type: 'APPROVE_ACTION' });
-    if (typeof approvePendingAction === 'function') {
-      approvePendingAction(true);
-    }
-    appendLogItem({ logType: 'INFO', message: '✅ Action approved by user. Resuming execution...' });
-  });
+  if (approveActionBtn) {
+    approveActionBtn.addEventListener('click', () => {
+      if (approvalBanner) approvalBanner.style.display = 'none';
+      chrome.runtime.sendMessage({ type: 'APPROVE_ACTION' });
+      if (typeof approvePendingAction === 'function') {
+        approvePendingAction(true);
+      }
+      appendLogItem({ logType: 'INFO', message: '✅ Action approved by user. Resuming execution...' });
+    });
+  }
 
-  rejectActionBtn.addEventListener('click', () => {
-    approvalBanner.style.display = 'none';
-    chrome.runtime.sendMessage({ type: 'REJECT_ACTION' });
-    if (typeof approvePendingAction === 'function') {
-      approvePendingAction(false);
-    }
-    appendLogItem({ logType: 'INFO', message: '❌ Action rejected by user. Skipped.' });
-  });
+  if (rejectActionBtn) {
+    rejectActionBtn.addEventListener('click', () => {
+      if (approvalBanner) approvalBanner.style.display = 'none';
+      chrome.runtime.sendMessage({ type: 'REJECT_ACTION' });
+      if (typeof approvePendingAction === 'function') {
+        approvePendingAction(false);
+      }
+      appendLogItem({ logType: 'INFO', message: '❌ Action rejected by user. Skipped.' });
+    });
+  }
 
   // Listen for background runtime events
   chrome.runtime.onMessage.addListener((message) => {
@@ -430,21 +536,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (message.type === 'AGENT_STATUS') {
       const status = message.status;
-      agentStatusText.textContent = message.message || `Status: ${status}`;
-      if (message.iteration !== undefined) {
+      if (agentStatusText) agentStatusText.textContent = message.message || `Status: ${status}`;
+      if (iterationBadge && message.iteration !== undefined) {
         iterationBadge.textContent = `Iter ${message.iteration}/15`;
       }
 
-      if (status === 'RUNNING' || status === 'CAPTURING' || status === 'PLANNING' || status === 'EXECUTING' || status === 'SANITIZING') {
-        agentStatusDot.className = 'status-dot running';
-      } else if (status === 'AWAITING_APPROVAL') {
-        agentStatusDot.className = 'status-dot awaiting';
-      } else if (status === 'COMPLETED') {
-        agentStatusDot.className = 'status-dot success';
-        setAgentRunning(false);
-      } else if (status === 'ERROR' || status === 'STOPPED') {
-        agentStatusDot.className = 'status-dot error';
-        setAgentRunning(false);
+      if (agentStatusDot) {
+        if (
+          status === 'RUNNING' ||
+          status === 'CAPTURING' ||
+          status === 'PLANNING' ||
+          status === 'EXECUTING' ||
+          status === 'SANITIZING'
+        ) {
+          agentStatusDot.className = 'status-dot running';
+        } else if (status === 'AWAITING_APPROVAL') {
+          agentStatusDot.className = 'status-dot awaiting';
+        } else if (status === 'COMPLETED') {
+          agentStatusDot.className = 'status-dot success';
+          setAgentRunning(false);
+        } else if (status === 'ERROR' || status === 'STOPPED') {
+          agentStatusDot.className = 'status-dot error';
+          setAgentRunning(false);
+        }
       }
     }
 
@@ -453,27 +567,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (message.type === 'AGENT_APPROVAL_REQUEST') {
-      approvalBanner.style.display = 'flex';
-      approvalReason.textContent = message.reason || 'Action requires user confirmation.';
-      approvalActionType.textContent = (message.action?.type || 'CLICK').toUpperCase();
-      approvalActionLabel.textContent = message.element?.label || message.element?.id || 'Submit Action';
+      if (approvalBanner) approvalBanner.style.display = 'flex';
+      if (approvalReason) approvalReason.textContent = message.reason || 'Action requires user confirmation.';
+      if (approvalActionType) approvalActionType.textContent = (message.action?.type || 'CLICK').toUpperCase();
+      if (approvalActionLabel) {
+        approvalActionLabel.textContent = message.element?.label || message.element?.id || 'Submit Action';
+      }
     }
   });
 
   // Sync state on popup open
   chrome.runtime.sendMessage({ type: 'GET_AGENT_STATUS' }, (statusResp) => {
     if (chrome.runtime.lastError || !statusResp) return;
-    if (statusResp.status && statusResp.status !== 'IDLE' && statusResp.status !== 'STOPPED' && statusResp.status !== 'COMPLETED') {
+    if (
+      statusResp.status &&
+      statusResp.status !== 'IDLE' &&
+      statusResp.status !== 'STOPPED' &&
+      statusResp.status !== 'COMPLETED'
+    ) {
       setAgentRunning(true);
-      agentStatusText.textContent = `Status: ${statusResp.status}`;
-      if (statusResp.iteration) iterationBadge.textContent = `Iter ${statusResp.iteration}/15`;
+      if (agentStatusText) agentStatusText.textContent = `Status: ${statusResp.status}`;
+      if (statusResp.iteration && iterationBadge) {
+        iterationBadge.textContent = `Iter ${statusResp.iteration}/15`;
+      }
       if (statusResp.logs && statusResp.logs.length > 0) {
         statusResp.logs.forEach(appendLogItem);
       }
     }
   });
 
-  // --- SCREEN SCHEMA CAPTURE TAB CONTROLLER ---
+  // --- 5. PRIVACY TAB: SIDE-BY-SIDE RAW VS SANITIZED COMPARISON ---
   const captureBtn = document.getElementById('captureBtn');
   const btnText = document.getElementById('btnText');
   const cameraIcon = document.getElementById('cameraIcon');
@@ -484,156 +607,141 @@ document.addEventListener('DOMContentLoaded', async () => {
   const statusTitle = document.getElementById('statusTitle');
   const statusMessage = document.getElementById('statusMessage');
 
-  const resultsSection = document.getElementById('resultsSection');
-  const elementCountBadge = document.getElementById('elementCountBadge');
-  const domCountBadge = document.getElementById('domCountBadge');
-  const ocrCountBadge = document.getElementById('ocrCountBadge');
-  const viewportBadge = document.getElementById('viewportBadge');
-  const screenshotImg = document.getElementById('screenshotImg');
-  const viewFullImageBtn = document.getElementById('viewFullImageBtn');
-
-  const privacyBanner = document.getElementById('privacyBanner');
+  const privacyStatsBanner = document.getElementById('privacyStatsBanner');
   const privacyTitle = document.getElementById('privacyTitle');
   const piiCategoryPills = document.getElementById('piiCategoryPills');
 
-  const viewSanitizedBtn = document.getElementById('viewSanitizedBtn');
-  const viewRawBtn = document.getElementById('viewRawBtn');
-  const jsonContent = document.getElementById('jsonContent');
-  const copyJsonBtn = document.getElementById('copyJsonBtn');
-
-  let currentRawSchema = null;
-  let currentSanitizedResult = null;
-  let currentViewMode = 'sanitized';
+  const sideBySideSection = document.getElementById('sideBySideSection');
+  const rawJsonCode = document.getElementById('rawJsonCode');
+  const sanitizedJsonCode = document.getElementById('sanitizedJsonCode');
 
   function showAlert(title, message, type = 'info') {
+    if (!statusAlert) return;
     statusAlert.style.display = 'flex';
     statusAlert.className = `alert-box ${type}`;
-    statusIcon.textContent = type === 'error' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
-    statusTitle.textContent = title;
-    statusMessage.textContent = message;
+    if (statusIcon) statusIcon.textContent = type === 'error' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+    if (statusTitle) statusTitle.textContent = title;
+    if (statusMessage) statusMessage.textContent = message;
   }
 
   function setCaptureLoading(loading, text = 'Capturing...') {
+    if (!captureBtn) return;
     captureBtn.disabled = loading;
     if (loading) {
-      cameraIcon.style.display = 'none';
-      captureSpinner.style.display = 'inline-block';
-      btnText.textContent = text;
+      if (cameraIcon) cameraIcon.style.display = 'none';
+      if (captureSpinner) captureSpinner.style.display = 'inline-block';
+      if (btnText) btnText.textContent = text;
     } else {
-      cameraIcon.style.display = 'inline-block';
-      captureSpinner.style.display = 'none';
-      btnText.textContent = 'Capture Current Viewport';
+      if (cameraIcon) cameraIcon.style.display = 'inline-block';
+      if (captureSpinner) captureSpinner.style.display = 'none';
+      if (btnText) btnText.textContent = 'Capture & Inspect Privacy Schema';
     }
   }
 
-  function renderSchemaView() {
-    if (currentViewMode === 'sanitized' && currentSanitizedResult) {
-      viewSanitizedBtn.classList.add('active');
-      viewRawBtn.classList.remove('active');
-      jsonContent.textContent = JSON.stringify(currentSanitizedResult.sanitizedSchema, null, 2);
-    } else if (currentRawSchema) {
-      viewRawBtn.classList.add('active');
-      viewSanitizedBtn.classList.remove('active');
-      jsonContent.textContent = JSON.stringify(currentRawSchema, null, 2);
-    }
+  /**
+   * Highlights token placeholders like {{FIELD:EMAIL_1}} in JSON string for pitch display
+   */
+  function renderHighlightedSanitizedJson(sanitizedSchema) {
+    const rawJson = JSON.stringify(sanitizedSchema, null, 2);
+    const escaped = escapeHTML(rawJson);
+    // Highlight {{FIELD:...}} tokens
+    return escaped.replace(/(\{\{FIELD:[A-Z0-9_]+\}\})/g, '<span class="hl-token">$1</span>');
   }
 
-  viewSanitizedBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    currentViewMode = 'sanitized';
-    renderSchemaView();
-  });
+  if (captureBtn) {
+    captureBtn.addEventListener('click', async () => {
+      setCaptureLoading(true, 'Capturing Screen...');
+      showAlert('Capturing', 'Extracting accessibility DOM & screenshot...', 'info');
 
-  viewRawBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    currentViewMode = 'raw';
-    renderSchemaView();
-  });
+      try {
+        chrome.runtime.sendMessage({ type: 'CAPTURE' }, async (response) => {
+          if (chrome.runtime.lastError || !response || response.status === 'error') {
+            setCaptureLoading(false);
+            showAlert('Capture Failed', response?.message || chrome.runtime.lastError?.message || 'Error capturing tab.', 'error');
+            return;
+          }
 
-  captureBtn.addEventListener('click', async () => {
-    setCaptureLoading(true, 'Capturing Screen...');
-    showAlert('Capturing', 'Extracting accessibility DOM & screenshot...', 'info');
+          const data = response.data;
+          let ocrResults = [];
 
-    try {
-      chrome.runtime.sendMessage({ type: 'CAPTURE' }, async (response) => {
-        if (chrome.runtime.lastError || !response || response.status === 'error') {
+          if (typeof runOCR === 'function' && data.screenshot) {
+            setCaptureLoading(true, 'Running OCR...');
+            try {
+              ocrResults = await runOCR(data.screenshot);
+            } catch (ocrErr) {
+              console.warn('[Vidur Popup] OCR fallback:', ocrErr.message);
+            }
+          }
+
+          // Build raw schema
+          const rawSchema = typeof buildScreenSchema === 'function'
+            ? buildScreenSchema(
+                data.elements || [],
+                ocrResults,
+                data.viewport || { width: 0, height: 0 },
+                data.url || ''
+              )
+            : {
+                schemaVersion: '1.0',
+                capturedAt: new Date().toISOString(),
+                viewport: data.viewport || { width: 0, height: 0 },
+                domain: 'localhost',
+                elements: data.elements || []
+              };
+
+          // Build sanitized schema
+          const sanitizeResult = typeof sanitizeSchema === 'function'
+            ? sanitizeSchema(rawSchema)
+            : { sanitizedSchema: rawSchema, placeholderMap: {}, piiCount: 0, piiCategories: {} };
+
+          // Render side-by-side JSON comparison
+          if (rawJsonCode) {
+            rawJsonCode.textContent = JSON.stringify(rawSchema, null, 2);
+          }
+
+          if (sanitizedJsonCode) {
+            sanitizedJsonCode.innerHTML = renderHighlightedSanitizedJson(sanitizeResult.sanitizedSchema);
+          }
+
+          if (sideBySideSection) {
+            sideBySideSection.style.display = 'grid';
+          }
+
+          // Update Privacy Stats Banner
+          if (privacyStatsBanner) {
+            privacyStatsBanner.style.display = 'flex';
+            if (privacyTitle) {
+              privacyTitle.textContent = `${sanitizeResult.piiCount} PII Value(s) Redacted & Protected`;
+            }
+            if (piiCategoryPills) {
+              piiCategoryPills.innerHTML = '';
+              const categories = sanitizeResult.piiCategories || {};
+              const catEntries = Object.entries(categories);
+              if (catEntries.length === 0) {
+                const cleanPill = document.createElement('span');
+                cleanPill.className = 'pii-category-badge';
+                cleanPill.textContent = 'Zero PII Detected (Clean)';
+                piiCategoryPills.appendChild(cleanPill);
+              } else {
+                for (const [cat, count] of catEntries) {
+                  const pill = document.createElement('span');
+                  pill.className = `pii-category-badge ${cat}`;
+                  pill.textContent = `${count} ${cat}`;
+                  piiCategoryPills.appendChild(pill);
+                }
+              }
+            }
+          }
+
+          showAlert('Success', 'Screen Schema captured and sanitized side-by-side.', 'success');
           setCaptureLoading(false);
-          showAlert('Capture Failed', response?.message || chrome.runtime.lastError?.message || 'Error capturing tab.', 'error');
-          return;
-        }
-
-        const data = response.data;
-        screenshotImg.src = data.screenshot;
-
-        let ocrResults = [];
-        if (typeof runOCR === 'function') {
-          setCaptureLoading(true, 'Running OCR...');
-          try {
-            ocrResults = await runOCR(data.screenshot);
-          } catch (ocrErr) {
-            console.warn('[Vidur Popup] OCR fallback:', ocrErr.message);
-          }
-        }
-
-        const rawSchema = buildScreenSchema(
-          data.elements || [],
-          ocrResults,
-          data.viewport || { width: 0, height: 0 },
-          data.url || ''
-        );
-        currentRawSchema = rawSchema;
-
-        const sanitizeResult = sanitizeSchema(rawSchema);
-        currentSanitizedResult = sanitizeResult;
-
-        const domCount = rawSchema.elements.filter((e) => e.source === 'dom').length;
-        const ocrCount = rawSchema.elements.filter((e) => e.source === 'ocr').length;
-        elementCountBadge.textContent = `${rawSchema.elements.length} Elements`;
-        domCountBadge.textContent = `${domCount} DOM`;
-        ocrCountBadge.textContent = `${ocrCount} OCR`;
-        viewportBadge.textContent = `${rawSchema.viewport.width}×${rawSchema.viewport.height} (${rawSchema.domain})`;
-
-        if (sanitizeResult.piiCount > 0) {
-          privacyBanner.style.display = 'flex';
-          privacyTitle.textContent = `${sanitizeResult.piiCount} PII Values Protected`;
-          piiCategoryPills.innerHTML = '';
-          for (const [cat, count] of Object.entries(sanitizeResult.piiCategories)) {
-            const pill = document.createElement('span');
-            pill.className = `pii-category-badge ${cat}`;
-            pill.textContent = `${count} ${cat}`;
-            piiCategoryPills.appendChild(pill);
-          }
-        } else {
-          privacyBanner.style.display = 'none';
-        }
-
-        currentViewMode = 'sanitized';
-        renderSchemaView();
-        resultsSection.style.display = 'flex';
-        showAlert('Success', 'Screen Schema built successfully.', 'success');
+        });
+      } catch (err) {
         setCaptureLoading(false);
-      });
-    } catch (err) {
-      setCaptureLoading(false);
-      showAlert('Error', err.message, 'error');
-    }
-  });
-
-  copyJsonBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (jsonContent.textContent) {
-      navigator.clipboard.writeText(jsonContent.textContent).then(() => {
-        copyJsonBtn.textContent = 'Copied!';
-        setTimeout(() => (copyJsonBtn.textContent = 'Copy JSON'), 2000);
-      });
-    }
-  });
-
-  viewFullImageBtn.addEventListener('click', () => {
-    if (screenshotImg.src) {
-      window.open(screenshotImg.src, '_blank');
-    }
-  });
+        showAlert('Error', err.message, 'error');
+      }
+    });
+  }
 
   // Helpers
   function sendRuntimeMessage(msg) {
@@ -655,6 +763,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/'/g, '&#039;');
   }
 
-  // Initial vault check
+  // Initial vault check on load
   await checkVaultState();
 });

@@ -100,6 +100,8 @@ graph TD
 
 ---
 
+---
+
 ### 2. Start the Backend Server
 
 ```bash
@@ -108,25 +110,26 @@ npm install
 npm run dev
 ```
 
-Server endpoints:
+Server endpoints & playgrounds:
 - Health check: `http://localhost:3000/health`
 - Reasoning endpoint: `POST http://localhost:3000/plan-action`
 - Product Search Test Page: `http://localhost:3000/test/search-test.html`
 - Login Test Page: `http://localhost:3000/test/login-test.html`
+- Enterprise Contact Test Page: `http://localhost:3000/test/contact-test.html`
 
 ---
 
-### 3. Run the Autonomous Agent
+### 3. Run the Autonomous Agent & Live Demo
 
-1. Open `http://localhost:3000/test/search-test.html` in Chrome.
-2. Open the **Vidur** extension popup.
-3. In the **Agent** tab, select the preset `"search for wireless headphones"` (or type your custom goal).
-4. Click **Start Autonomous Agent**:
-   - The agent captures the screen and sanitizes the DOM.
-   - The LLM reasons on the page structure and outputs action steps.
-   - The local executor types the query and clicks the search button.
-   - Search results are dynamically rendered on the page!
-   - The live **Agent Log** displays model reasoning, token resolution chips, and action metrics.
+1. Open any test page in Chrome (e.g. `http://localhost:3000/test/search-test.html`).
+2. Open the **Vidur** extension (supports both Side Panel and Popup mode).
+3. Choose from the **Task**, **Privacy**, or **Vault** tabs:
+   - **Task Tab**: Select presets (`🔍 Search Headphones`, `🔑 Login Form`, `📝 Contact Form`), toggle **Demo Mode** if offline, and click **Start Autonomous Agent**.
+   - **Privacy Tab**: Click **Capture & Inspect Privacy Schema** to inspect side-by-side Raw vs. Sanitized schema with highlighted `{{FIELD:TOKEN}}` tokens.
+   - **Vault Tab**: Unlock the WebCrypto AES-GCM encrypted vault with your master passphrase.
+   - **How It Works**: Click the **ℹ️** button in the header to view the 5-Stage Pipeline Modal with the Zero-Leak Privacy Boundary.
+
+> 📖 **Live Presentation & Pitch Guide**: See [DEMO_SCRIPT.md](file:///c:/Users/kumar/Desktop/Vidur/DEMO_SCRIPT.md) for full step-by-step speaker notes, live demo scenarios, and pitch FAQs.
 
 ---
 
@@ -144,3 +147,4 @@ Runs all 28 automated tests covering:
 - Privacy Sanitizer & Luhn Algorithm (`test/sanitizer.test.js`)
 - Screen Schema & IoU BBox Deduplication (`test/screen-schema.test.js`)
 - DOM Tree Accessibility Extraction (`test-dom-extraction.js`)
+

@@ -24,6 +24,11 @@ for (const mod of modules) {
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('[Vidur Background] Vidur Extension installed successfully.');
+  if (chrome.sidePanel && typeof chrome.sidePanel.setPanelBehavior === 'function') {
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err) => {
+      console.log('[Vidur Background] SidePanel note:', err.message);
+    });
+  }
 });
 
 // Runtime Message Dispatcher
@@ -61,10 +66,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         const task = message.task || 'Complete page task';
         const serverUrl = message.serverUrl || 'http://localhost:3000/plan-action';
+        const demoMode = message.demoMode !== undefined ? message.demoMode : false;
 
-        console.log(`[Vidur Background] Starting agent loop for tab ${tabId}, task: "${task}"`);
-        const orchestrator = startOrchestration({ task, tabId, serverUrl });
-        sendResponse({ status: 'started', task, tabId });
+        console.log(`[Vidur Background] Starting agent loop for tab ${tabId}, task: "${task}", demoMode: ${demoMode}`);
+        const orchestrator = startOrchestration({ task, tabId, serverUrl, demoMode });
+        sendResponse({ status: 'started', task, tabId, demoMode });
       } catch (err) {
         console.error('[Vidur Background] Start agent error:', err);
         sendResponse({ status: 'error', message: err.message });

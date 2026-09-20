@@ -29,7 +29,7 @@ function resolvePlaceholder(token, placeholderMap = {}, vaultProfile = {}) {
   // 1. Check local session placeholderMap
   if (placeholderMap && Object.prototype.hasOwnProperty.call(placeholderMap, token)) {
     const directVal = placeholderMap[token];
-    if (directVal !== undefined && directVal !== null) {
+    if (directVal !== undefined && directVal !== null && directVal !== '') {
       return directVal;
     }
   }
@@ -121,7 +121,7 @@ function executeDOMActionInPage(action, targetElement, resolvedValue) {
   function findDOMElement(meta) {
     if (!meta) return null;
 
-    // 1. Try matching by standard id / name attributes if present in label or id
+    // 1. Match by standard HTML ID attribute if present
     if (meta.id && document.getElementById(meta.id)) {
       return document.getElementById(meta.id);
     }
@@ -133,11 +133,9 @@ function executeDOMActionInPage(action, targetElement, resolvedValue) {
 
       const elAtPoint = document.elementFromPoint(centerX, centerY);
       if (elAtPoint) {
-        // If element directly matches or has matching tag/type
         if (!meta.tag || elAtPoint.tagName.toLowerCase() === meta.tag.toLowerCase()) {
           return elAtPoint;
         }
-        // Look up parent or child matching tag
         const matchingChild = elAtPoint.querySelector(meta.tag || '*');
         if (matchingChild) return matchingChild;
         const matchingParent = elAtPoint.closest(meta.tag || '*');
@@ -145,12 +143,13 @@ function executeDOMActionInPage(action, targetElement, resolvedValue) {
       }
     }
 
-    // 3. Fallback to querying by tag and matching label / placeholder / text
+    // 3. Fallback to querying by tag and matching label / placeholder / name
     const candidates = Array.from(document.querySelectorAll(meta.tag || 'input, button, a, select, textarea'));
     for (const cand of candidates) {
       const candLabel = (
         cand.getAttribute('aria-label') ||
         cand.getAttribute('placeholder') ||
+        cand.getAttribute('name') ||
         cand.innerText ||
         cand.textContent ||
         ''
@@ -168,7 +167,8 @@ function executeDOMActionInPage(action, targetElement, resolvedValue) {
   if (!el) {
     return {
       success: false,
-      error: `Could not locate DOM element for elementId: ${action.elementId}`
+      staleElement: true,
+      error: `Could not locate DOM element for elementId "${action.elementId}" (${targetElement?.label || targetElement?.tag || 'unknown'}). Element may have changed dynamically.`
     };
   }
 
@@ -211,6 +211,8 @@ function executeDOMActionInPage(action, targetElement, resolvedValue) {
       // Set input value using prototype setter to ensure React / Vue synthetic events trigger
       const proto = el.tagName.toLowerCase() === 'textarea'
         ? window.HTMLTextAreaElement.prototype
+        : el.tagName.toLowerCase() === 'select'
+        ? window.HTMLSelectElement.prototype
         : window.HTMLInputElement.prototype;
 
       const descriptor = Object.getOwnPropertyDescriptor(proto, 'value');
