@@ -34,13 +34,24 @@ async function runOCR(screenshotDataUrl) {
 
   try {
     console.log('[Vidur OCR] Starting OCR processing...');
-    const result = await tesseractLib.recognize(screenshotDataUrl, 'eng', {
+
+    // Configure options for Chrome Extension environment with local paths
+    const options = {
       logger: (m) => {
         if (m.status === 'recognizing text' && m.progress) {
           console.log(`[Vidur OCR Progress] ${(m.progress * 100).toFixed(0)}%`);
         }
       }
-    });
+    };
+
+    // If running in Chrome Extension context, supply local web_accessible resource URLs
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+      options.workerPath = chrome.runtime.getURL('lib/worker.min.js');
+      options.corePath = chrome.runtime.getURL('lib/tesseract-core-lstm.wasm.js');
+      options.workerBlobURL = false;
+    }
+
+    const result = await tesseractLib.recognize(screenshotDataUrl, 'eng', options);
 
     if (!result || !result.data) {
       return [];
@@ -76,7 +87,7 @@ async function runOCR(screenshotDataUrl) {
     console.log(`[Vidur OCR] Complete. Found ${ocrItems.length} high-confidence text tokens.`);
     return ocrItems;
   } catch (err) {
-    console.error('[Vidur OCR] Error running Tesseract OCR:', err);
+    console.warn('[Vidur OCR] OCR recognition skipped or encountered a non-critical issue:', err.message || err);
     return [];
   }
 }
