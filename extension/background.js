@@ -1,50 +1,196 @@
 /**
- * Vidur Extension - Background Service Worker
- * Handles screen captures and coordinates DOM tree extraction with content script.
+ * Vidur Extension - Background Service Worker & Orchestration Hub
+ * Coordinates screen captures, privacy sanitization,
+ * LLM action reasoning, and local autonomous execution loops.
  */
 
+// Import service worker compatible modules safely
+const modules = [
+  'screen-schema.js',
+  'sanitizer.js',
+  'vault.js',
+  'executor.js',
+  'orchestrator.js'
+];
+
+for (const mod of modules) {
+  try {
+    importScripts(mod);
+    console.log(`[Vidur Background] Loaded module: ${mod}`);
+  } catch (err) {
+    console.error(`[Vidur Background] Failed to load module ${mod}:`, err.message);
+  }
+}
+
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('[Vidur Background] Extension installed successfully.');
+  console.log('[Vidur Background] Vidur Extension installed successfully.');
 });
 
+// Runtime Message Dispatcher
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('[Vidur Background] Message received:', message);
+  if (!message) return;
 
-  const isCaptureMessage =
-    message === 'CAPTURE' ||
-    (message && (message.type === 'CAPTURE' || message.type === 'CAPTURE_SCREEN'));
+  const msgType = typeof message === 'string' ? message : message.type;
 
-  if (isCaptureMessage) {
-    handleCaptureRequest()
+  // 1. CAPTURE / SCREENSHOT REQUEST
+  if (msgType === 'CAPTURE' || msgType === 'CAPTURE_SCREEN') {
+    handleCaptureRequest(message.tabId)
       .then((result) => sendResponse(result))
       .catch((err) => {
-        console.error('[Vidur Background] Capture error:', err);
+        console.warn('[Vidur Background] Capture error:', err.message);
         sendResponse({
           status: 'error',
           message: err.message || 'An unexpected error occurred during capture.'
         });
       });
+    return true;
+  }
 
-    // Return true to indicate asynchronous response
+  // 2. START AGENT LOOP
+  if (msgType === 'START_AGENT' || msgType === 'START_AGENT_LOOP') {
+    (async () => {
+      try {
+        let tabId = message.tabId;
+        if (!tabId) {
+          const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+          if (!tabs || tabs.length === 0 || !tabs[0].id) {
+            return sendResponse({ status: 'error', message: 'No active tab found.' });
+          }
+          tabId = tabs[0].id;
+        }
+
+        const task = message.task || 'Complete page task';
+        const serverUrl = message.serverUrl || 'http://localhost:3000/plan-action';
+
+        console.log(`[Vidur Background] Starting agent loop for tab ${tabId}, task: "${task}"`);
+        const orchestrator = startOrchestration({ task, tabId, serverUrl });
+        sendResponse({ status: 'started', task, tabId });
+      } catch (err) {
+        console.error('[Vidur Background] Start agent error:', err);
+        sendResponse({ status: 'error', message: err.message });
+      }
+    })();
+    return true;
+  }
+
+  // 3. STOP AGENT LOOP
+  if (msgType === 'STOP_AGENT') {
+    stopOrchestration();
+    sendResponse({ status: 'stopped' });
+    return true;
+  }
+
+  // 4. APPROVE / REJECT PENDING ACTION
+  if (msgType === 'APPROVE_ACTION') {
+    approvePendingAction(true);
+    sendResponse({ status: 'approved' });
+    return true;
+  }
+
+  if (msgType === 'REJECT_ACTION') {
+    approvePendingAction(false);
+    sendResponse({ status: 'rejected' });
+    return true;
+  }
+
+  // 5. GET CURRENT AGENT STATUS
+  if (msgType === 'GET_AGENT_STATUS') {
+    const loop = getActiveLoop();
+    sendResponse({
+      status: loop ? loop.status : 'IDLE',
+      iteration: loop ? loop.iteration : 0,
+      task: loop ? loop.task : null,
+      logs: loop ? loop.logs : [],
+      actionHistory: loop ? loop.actionHistory : []
+    });
+    return true;
+  }
+
+  // 6. VAULT OPERATIONS
+  if (msgType === 'GET_VAULT_STATUS') {
+    (async () => {
+      try {
+        const configured = await isVaultConfigured();
+        const unlocked = isVaultUnlocked();
+        const profile = unlocked ? getDecryptedProfile() : null;
+        sendResponse({ configured, unlocked, profile });
+      } catch (err) {
+        sendResponse({ configured: false, unlocked: false, error: err.message });
+      }
+    })();
+    return true;
+  }
+
+  if (msgType === 'SETUP_VAULT') {
+    (async () => {
+      try {
+        await setupVault(message.passphrase, message.profile);
+        sendResponse({ status: 'success', unlocked: true, profile: message.profile });
+      } catch (err) {
+        sendResponse({ status: 'error', message: err.message });
+      }
+    })();
+    return true;
+  }
+
+  if (msgType === 'UNLOCK_VAULT') {
+    (async () => {
+      try {
+        const result = await unlockVault(message.passphrase);
+        sendResponse({ status: 'success', unlocked: true, profile: result.profile });
+      } catch (err) {
+        sendResponse({ status: 'error', message: err.message });
+      }
+    })();
+    return true;
+  }
+
+  if (msgType === 'LOCK_VAULT') {
+    lockVault();
+    sendResponse({ status: 'success', unlocked: false });
+    return true;
+  }
+
+  if (msgType === 'UPDATE_VAULT_PROFILE') {
+    (async () => {
+      try {
+        await updateVaultProfile(message.profile);
+        sendResponse({ status: 'success', profile: message.profile });
+      } catch (err) {
+        sendResponse({ status: 'error', message: err.message });
+      }
+    })();
     return true;
   }
 });
 
 /**
  * Executes full capture workflow: tab validation, screenshot capture, and DOM extraction.
+ * @param {number} [specificTabId]
  * @returns {Promise<object>}
  */
-async function handleCaptureRequest() {
-  // 1. Get active tab
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tabs || tabs.length === 0 || !tabs[0].id) {
-    throw new Error('No active browser tab found.');
+async function handleCaptureRequest(specificTabId) {
+  let activeTab = null;
+
+  if (specificTabId) {
+    try {
+      activeTab = await chrome.tabs.get(specificTabId);
+    } catch {
+      // Fallback
+    }
   }
 
-  const activeTab = tabs[0];
+  if (!activeTab) {
+    const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (!tabs || tabs.length === 0 || !tabs[0].id) {
+      throw new Error('No active browser tab found.');
+    }
+    activeTab = tabs[0];
+  }
+
   const url = activeTab.url || '';
 
-  // 2. Validate URL - cannot capture internal or restricted pages
+  // Validate URL - cannot capture internal or restricted pages
   if (
     url.startsWith('chrome://') ||
     url.startsWith('chrome-extension://') ||
@@ -54,28 +200,26 @@ async function handleCaptureRequest() {
     url.startsWith('view-source:')
   ) {
     throw new Error(
-      'Cannot capture internal browser system pages (e.g. chrome://, extensions, new tab). Please navigate to a standard web page (e.g. https://example.com) to capture.'
+      'Cannot capture internal browser system pages (e.g. chrome://, extensions, new tab). Please navigate to a standard web page (e.g. http://localhost:3000/test/search-test.html) to capture.'
     );
   }
 
-  // 3. Capture visible tab screenshot
+  // Capture visible tab screenshot
   let screenshot = null;
   try {
     screenshot = await chrome.tabs.captureVisibleTab(activeTab.windowId, {
       format: 'png'
     });
   } catch (err) {
-    throw new Error(`Failed to capture screenshot: ${err.message}`);
+    console.warn('[Vidur Background] Screenshot warning:', err.message);
   }
 
-  // 4. Extract DOM accessibility tree from content script
+  // Extract DOM accessibility tree from content script
   let domResult = null;
 
   try {
-    // Attempt direct message to content script
     domResult = await sendTabMessage(activeTab.id, { type: 'EXTRACT_DOM' });
   } catch {
-    // If content script was not already loaded (e.g. tab opened before extension installed), inject it dynamically
     console.log('[Vidur Background] Content script not responding, injecting programmatically...');
     try {
       await chrome.scripting.executeScript({
@@ -83,7 +227,6 @@ async function handleCaptureRequest() {
         files: ['content-script.js']
       });
 
-      // Retry sending message after injection
       domResult = await sendTabMessage(activeTab.id, { type: 'EXTRACT_DOM' });
     } catch (injectionErr) {
       throw new Error(
