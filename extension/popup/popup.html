@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vidur</title>
+  <title>Vidur - Autonomous AI Browser Agent</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -14,25 +14,211 @@
         <div class="logo-badge">V</div>
         <div>
           <h1 class="app-title">Vidur</h1>
-          <span class="app-subtitle">Unified Screen Schema & Perception</span>
+          <span class="app-subtitle">Autonomous Web Agent & Vault Guard</span>
         </div>
       </div>
-      <span class="badge-version">v1.1.0</span>
+      <div class="header-right">
+        <div id="vaultStatusIndicator" class="vault-mini-badge locked" title="Vault status">
+          <span class="vault-mini-icon">🔒</span>
+          <span id="vaultMiniText">Vault Locked</span>
+        </div>
+        <span class="badge-version">v1.3.0</span>
+      </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="main-content">
-      <!-- Action Button -->
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button id="navAgentTab" class="tab-btn active" type="button">
+        <span class="tab-icon">🤖</span>
+        <span>Agent</span>
+      </button>
+      <button id="navVaultTab" class="tab-btn" type="button">
+        <span class="tab-icon">🔐</span>
+        <span>Profile Vault</span>
+      </button>
+      <button id="navSchemaTab" class="tab-btn" type="button">
+        <span class="tab-icon">📸</span>
+        <span>Screen Schema</span>
+      </button>
+    </nav>
+
+    <!-- TAB 1: AUTONOMOUS AGENT -->
+    <main id="agentTabContent" class="tab-content active">
+      <!-- Task Input Card -->
+      <section class="card task-card">
+        <label for="taskInput" class="task-label">Automation Task / Goal</label>
+        <div class="task-input-wrapper">
+          <textarea
+            id="taskInput"
+            class="task-textarea"
+            rows="2"
+            placeholder="e.g. search for wireless headphones"
+          >search for wireless headphones</textarea>
+        </div>
+
+        <div class="task-presets">
+          <span class="presets-label">Presets:</span>
+          <button class="preset-pill" type="button" data-task="search for wireless headphones">🔍 Search Headphones</button>
+          <button class="preset-pill" type="button" data-task="log in with my account">🔑 Login Form</button>
+        </div>
+
+        <div class="agent-actions">
+          <button id="startAgentBtn" class="primary-btn start-agent-btn" type="button">
+            <svg id="playIcon" class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span id="agentSpinner" class="spinner" style="display: none;"></span>
+            <span id="startAgentBtnText">Start Autonomous Agent</span>
+          </button>
+          <button id="stopAgentBtn" class="stop-btn" type="button" style="display: none;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+            </svg>
+            <span>Stop</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Safety Approval Banner (Human-in-the-Loop) -->
+      <section id="approvalBanner" class="approval-card" style="display: none;">
+        <div class="approval-header">
+          <span class="approval-warning-icon">⚠️</span>
+          <div>
+            <span class="approval-title">Human Approval Required</span>
+            <p id="approvalReason" class="approval-desc">The agent wants to perform a sensitive submit action.</p>
+          </div>
+        </div>
+        <div id="approvalActionDetails" class="approval-action-box">
+          <span id="approvalActionType" class="approval-type-tag">CLICK</span>
+          <span id="approvalActionLabel" class="approval-label-text">Submit Button</span>
+        </div>
+        <div class="approval-buttons">
+          <button id="approveActionBtn" class="approval-btn approve" type="button">
+            <span>✅ Approve Action</span>
+          </button>
+          <button id="rejectActionBtn" class="approval-btn reject" type="button">
+            <span>❌ Reject & Skip</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Agent Status Bar -->
+      <section id="agentStatusBar" class="agent-status-bar" style="display: none;">
+        <div class="status-left">
+          <span id="agentStatusDot" class="status-dot"></span>
+          <span id="agentStatusText" class="status-text">Agent Idle</span>
+        </div>
+        <div class="status-right">
+          <span id="iterationBadge" class="iteration-badge">Iter 0/15</span>
+        </div>
+      </section>
+
+      <!-- Live Agent Log Feed -->
+      <section class="card agent-log-card">
+        <div class="card-header">
+          <div class="header-with-badge">
+            <span class="card-title">Live Agent Activity Log</span>
+            <span id="logCountBadge" class="mini-count-badge">0 events</span>
+          </div>
+          <button id="clearLogBtn" class="mini-action-btn" type="button" title="Clear log">Clear</button>
+        </div>
+        <div id="agentLogFeed" class="agent-log-feed">
+          <div class="empty-log-state">
+            <span class="empty-icon">⚡</span>
+            <span>Ready. Enter a task above and start the agent loop.</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- TAB 2: PROFILE VAULT -->
+    <main id="vaultTabContent" class="tab-content" style="display: none;">
+      <!-- Vault Lock/Unlock Card -->
+      <section class="card vault-auth-card">
+        <div class="vault-auth-header">
+          <div class="vault-auth-icon-wrap">
+            <span id="vaultAuthStatusIcon" class="vault-auth-icon">🔒</span>
+          </div>
+          <div>
+            <h2 id="vaultAuthTitle" class="vault-auth-title">Local Encrypted Vault</h2>
+            <p id="vaultAuthDesc" class="vault-auth-desc">AES-GCM 256-bit encrypted with PBKDF2 passphrase.</p>
+          </div>
+        </div>
+
+        <div class="vault-input-group">
+          <label for="vaultPassphraseInput" class="field-label">Vault Passphrase</label>
+          <div class="passphrase-row">
+            <input
+              id="vaultPassphraseInput"
+              type="password"
+              class="text-input"
+              placeholder="Enter master passphrase..."
+            />
+            <button id="unlockVaultBtn" class="action-btn" type="button">Unlock</button>
+            <button id="lockVaultBtn" class="action-btn secondary" type="button" style="display: none;">Lock</button>
+          </div>
+          <span id="vaultAuthError" class="field-error" style="display: none;"></span>
+        </div>
+      </section>
+
+      <!-- Vault Profile Editor (Visible when unlocked) -->
+      <section id="vaultProfileSection" class="card vault-profile-card" style="display: none;">
+        <div class="card-header">
+          <span class="card-title">Profile Vault Data</span>
+          <span class="vault-guard-badge">🔒 Encrypted on-device</span>
+        </div>
+
+        <form id="vaultProfileForm" class="vault-form">
+          <div class="form-row">
+            <label for="vaultName" class="field-label">Full Name</label>
+            <input id="vaultName" type="text" class="text-input" placeholder="e.g. Jane Doe" />
+          </div>
+
+          <div class="form-row">
+            <label for="vaultEmail" class="field-label">Email Address ({{FIELD:EMAIL_*}})</label>
+            <input id="vaultEmail" type="email" class="text-input" placeholder="e.g. jane@example.com" />
+          </div>
+
+          <div class="form-row">
+            <label for="vaultPhone" class="field-label">Phone Number ({{FIELD:PHONE_*}})</label>
+            <input id="vaultPhone" type="tel" class="text-input" placeholder="e.g. +1 555-0199" />
+          </div>
+
+          <div class="form-row">
+            <label for="vaultAddress" class="field-label">Physical Address ({{FIELD:ADDRESS_*}})</label>
+            <input id="vaultAddress" type="text" class="text-input" placeholder="e.g. 123 Tech Blvd, Suite 400" />
+          </div>
+
+          <div class="form-row">
+            <label for="vaultPassword" class="field-label">Master Test Password ({{FIELD:PASSWORD_*}})</label>
+            <input id="vaultPassword" type="password" class="text-input" placeholder="e.g. TestSecret123!" />
+          </div>
+
+          <div class="form-row">
+            <label for="vaultGovtId" class="field-label">Govt ID / Aadhaar ({{FIELD:GOVT_ID_*}})</label>
+            <input id="vaultGovtId" type="text" class="text-input" placeholder="e.g. 2345 6789 0123" />
+          </div>
+
+          <button id="saveVaultProfileBtn" class="primary-btn save-vault-btn" type="button">
+            <span>Save & Encrypt Profile</span>
+          </button>
+        </form>
+      </section>
+    </main>
+
+    <!-- TAB 3: SCREEN SCHEMA & CAPTURE -->
+    <main id="schemaTabContent" class="tab-content" style="display: none;">
+      <!-- Capture Action Button -->
       <button id="captureBtn" class="capture-button" type="button">
-        <svg id="cameraIcon" class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg id="cameraIcon" class="btn-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
           <circle cx="12" cy="13" r="4"></circle>
         </svg>
-        <span id="spinnerIcon" class="spinner" style="display: none;"></span>
-        <span id="btnText">Capture Screen</span>
+        <span id="captureSpinner" class="spinner" style="display: none;"></span>
+        <span id="btnText">Capture Current Viewport</span>
       </button>
 
-      <!-- Status / Alert Message -->
+      <!-- Status Alert -->
       <div id="statusAlert" class="alert-box" style="display: none;">
         <span id="statusIcon" class="alert-icon">ℹ️</span>
         <div class="alert-content">
@@ -41,9 +227,8 @@
         </div>
       </div>
 
-      <!-- Results Container (shown after capture) -->
+      <!-- Results Section -->
       <section id="resultsSection" class="results-section" style="display: none;">
-        <!-- Metrics bar -->
         <div class="metrics-bar">
           <div class="metric-pill">
             <span class="metric-dot"></span>
@@ -56,25 +241,27 @@
           <span id="viewportBadge" class="metric-subtext"></span>
         </div>
 
-        <!-- Screenshot Preview Card -->
+        <div id="privacyBanner" class="privacy-banner" style="display: none;">
+          <div class="privacy-banner-left">
+            <span class="shield-icon">🛡️</span>
+            <div>
+              <span id="privacyTitle" class="privacy-title">Privacy Guard Active</span>
+              <p id="privacySubtitle" class="privacy-desc">Sensitive values sanitized locally before cloud transmission.</p>
+            </div>
+          </div>
+          <div id="piiCategoryPills" class="pii-pills-container"></div>
+        </div>
+
         <div class="card screenshot-card">
           <div class="card-header">
             <span class="card-title">Viewport Screenshot</span>
-            <button id="viewFullImageBtn" class="mini-action-btn" type="button" title="Open screenshot in new tab">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-              <span>Full View</span>
-            </button>
+            <button id="viewFullImageBtn" class="mini-action-btn" type="button">Full View</button>
           </div>
           <div class="image-wrapper">
-            <img id="screenshotImg" class="screenshot-img" alt="Captured Tab Viewport" />
+            <img id="screenshotImg" class="screenshot-img" alt="Captured Viewport" />
           </div>
         </div>
 
-        <!-- Collapsible Screen Schema JSON View -->
         <div class="card json-card">
           <details id="jsonDetails" open>
             <summary class="json-summary">
@@ -82,16 +269,19 @@
                 <svg class="chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
-                <span class="card-title">Unified Screen Schema (v1.0)</span>
+                <span class="card-title">Screen Schema View</span>
               </div>
-              <button id="copyJsonBtn" class="mini-action-btn" type="button" title="Copy Screen Schema JSON">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <span id="copyBtnText">Copy JSON</span>
-              </button>
+              <button id="copyJsonBtn" class="mini-action-btn" type="button">Copy JSON</button>
             </summary>
+
+            <div class="view-toggle-bar">
+              <span class="toggle-label">Preview Mode:</span>
+              <div class="segmented-control">
+                <button id="viewSanitizedBtn" class="segment-btn active" type="button">🔒 Sanitized</button>
+                <button id="viewRawBtn" class="segment-btn" type="button">⚠️ Raw</button>
+              </div>
+            </div>
+
             <div class="json-content-wrapper">
               <pre class="json-pre"><code id="jsonContent" class="json-code"></code></pre>
             </div>
@@ -102,7 +292,7 @@
 
     <!-- Footer -->
     <footer class="footer">
-      <span>Vidur AI Monorepo</span>
+      <span>Vidur AI Monorepo • Autonomous Browser Agent</span>
     </footer>
   </div>
 
@@ -110,6 +300,10 @@
   <script src="../lib/tesseract.min.js"></script>
   <script src="../perception.js"></script>
   <script src="../screen-schema.js"></script>
+  <script src="../sanitizer.js"></script>
+  <script src="../vault.js"></script>
+  <script src="../executor.js"></script>
+  <script src="../orchestrator.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

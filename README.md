@@ -1,6 +1,6 @@
 # Vidur Monorepo
 
-Vidur is an AI-powered screen capture and analysis platform consisting of a Manifest V3 Chrome Extension, an Express backend server, and shared TypeScript type contracts.
+Vidur is an autonomous AI browser agent and privacy platform featuring a Manifest V3 Chrome Extension, local WebCrypto encrypted profile vault, AI reasoning engine (Claude 3.5 Sonnet), and real-time human-in-the-loop safety approvals.
 
 ---
 
@@ -9,97 +9,138 @@ Vidur is an AI-powered screen capture and analysis platform consisting of a Mani
 ```
 vidur/
 ├── extension/            # Manifest V3 Chrome extension
-│   ├── manifest.json     # Extension metadata and permissions
-│   ├── background.js     # Service worker (capture & DOM extraction coordinator)
+│   ├── manifest.json     # Extension metadata, permissions & service worker
+│   ├── background.js     # Background service worker & orchestration dispatcher
 │   ├── content-script.js # Accessibility DOM tree extractor & element listener
+│   ├── perception.js     # OCR perception layer (Tesseract.js integration)
+│   ├── screen-schema.js  # Unified Screen Schema & IoU merge logic
+│   ├── sanitizer.js      # Client-side Privacy Sanitizer (PII Redaction)
+│   ├── vault.js          # WebCrypto Encrypted Profile Vault (AES-GCM + PBKDF2)
+│   ├── executor.js       # Local Action Executor & Token Resolver
+│   ├── orchestrator.js   # Autonomous Orchestration Loop (15 max iterations)
 │   ├── popup/            # Extension popup UI
-│   │   ├── popup.html
-│   │   ├── popup.css
-│   │   └── popup.js
-│   ├── test-page/        # Local test forms and playground
-│   │   └── login-test.html
+│   │   ├── popup.html    # Tabbed UI (Agent, Profile Vault, Screen Schema)
+│   │   ├── popup.css     # Dark glassmorphic theme & live activity feed
+│   │   └── popup.js      # Controller for loop lifecycle & vault security
+│   ├── test-page/        # Local interactive test environments
+│   │   ├── search-test.html  # Product search, filter, and checkout test page
+│   │   └── login-test.html   # Authenticated form test page
+│   ├── lib/              # Local vendored libraries (tesseract.min.js)
 │   └── icons/            # Extension icons (16x16, 48x48, 128x128)
 ├── server/               # Node.js / Express backend
 │   ├── src/
-│   │   ├── index.js      # Express entry point (Port 3000)
-│   │   └── routes/       # Route handlers
-│   │       └── health.js
-│   ├── test-dom-extraction.js # Automated DOM extractor test suite
+│   │   ├── index.js      # Express server entry point (Port 3000)
+│   │   ├── routes/       # Route handlers (/health, /plan-action)
+│   │   │   ├── health.js
+│   │   │   └── planAction.js
+│   │   └── services/     # AI services
+│   │       └── reasoner.js # Claude 3.5 Sonnet / Heuristic action reasoning
+│   ├── test/             # Automated unit and integration test suites
+│   │   ├── plan-action.test.js
+│   │   ├── executor.test.js
+│   │   ├── orchestration-e2e.test.js
+│   │   ├── sanitizer.test.js
+│   │   └── screen-schema.test.js
+│   ├── test-dom-extraction.js
+│   ├── .env.example
 │   └── package.json
-├── shared/               # TypeScript shared types between extension and server
-│   └── schema-types.ts
+├── shared/               # Universal schema definitions & types
+│   ├── schema-types.ts
+│   ├── screen-schema.js
+│   └── sanitizer.js
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
+## 🔄 Autonomous Orchestration Loop
+
+Vidur runs an on-device orchestration cycle:
+
+```mermaid
+graph TD
+    A[Capture Screen & DOM] --> B[Sanitize PII -> {{FIELD:TOKEN}}]
+    B --> C[POST /plan-action to Reasoning Server]
+    C --> D{Is Plan Done?}
+    D -- Yes --> E[Task Complete 🎉]
+    D -- No --> F{Is Action Sensitive?}
+    F -- Yes: Submit / Pay / Delete --> G[Request Human Approval in Popup ⚠️]
+    G --> H[User Approves]
+    F -- No --> I[Resolve Tokens from Local Vault 🔐]
+    H --> I
+    I --> J[Execute Actions via chrome.scripting]
+    J --> K[Wait Page to Settle]
+    K --> A
+```
+
+- **Hard Iteration Limit**: Capped at **15 iterations** to prevent infinite loops.
+- **Zero-Leak Cloud Defense**: Credentials and sensitive values are replaced with placeholder tokens (e.g. `{{FIELD:EMAIL_1}}`, `{{FIELD:PASSWORD_1}}`) before transmitting the screen schema to the LLM.
+- **Human-in-the-Loop Safety**: Actions targeting `/submit|pay|confirm|delete|checkout/i` trigger an approval banner in the popup before execution.
+
+---
+
+## 🔐 Encrypted Profile Vault (`vault.js`)
+
+- Uses the **WebCrypto SubtleCrypto API**:
+  - **AES-GCM 256-bit** encryption.
+  - **PBKDF2** key derivation (100,000 rounds of SHA-256 with a 16-byte random salt).
+- **IndexedDB Storage**: Encrypted payload is saved in `VidurVaultDB`. The encryption key is derived on the fly from the user's passphrase and is **never stored in plaintext** or on disk.
+
+---
+
 ## 🚀 Getting Started
 
-### 1. Load the Chrome Extension (Manifest V3)
+### 1. Load the Chrome Extension
 
-1. Open Google Chrome and navigate to:
-   ```
-   chrome://extensions
-   ```
-2. Enable **Developer mode** using the toggle in the top-right corner.
-3. Click the **Load unpacked** button in the top-left corner.
-4. Select the `extension/` folder inside this repository (`vidur/extension`).
-   *(If previously loaded, click the **Reload** (🔄) icon on the Vidur extension card).*
-5. Pin **Vidur** to your browser toolbar.
+1. Open Google Chrome and go to `chrome://extensions`.
+2. Enable **Developer mode** (toggle in the top-right).
+3. Click **Load unpacked** and select the `vidur/extension` folder.
+4. Pin **Vidur** to your browser toolbar.
 
 ---
 
-### 2. Run the Express Backend Server & Test Page
+### 2. Start the Backend Server
 
-1. Open your terminal and navigate to the `server/` directory:
-   ```bash
-   cd server
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-4. Confirm health check:
-   ```
-   http://localhost:3000/health
-   ```
-5. Open the test login page in your browser:
-   ```
-   http://localhost:3000/test/login-test.html
-   ```
+```bash
+cd server
+npm install
+npm run dev
+```
+
+Server endpoints:
+- Health check: `http://localhost:3000/health`
+- Reasoning endpoint: `POST http://localhost:3000/plan-action`
+- Product Search Test Page: `http://localhost:3000/test/search-test.html`
+- Login Test Page: `http://localhost:3000/test/login-test.html`
 
 ---
 
-### 3. Test the Capture Layer
+### 3. Run the Autonomous Agent
 
-1. Open `http://localhost:3000/test/login-test.html` (or any web page with form fields).
-2. Click the **Vidur** extension icon in your Chrome toolbar.
-3. Click **Capture Screen**:
-   - 📸 **Viewport Screenshot**: Renders as an image preview in the popup (click to inspect in full resolution).
-   - ⚡ **Element Count**: Displays total interactive elements found.
-   - 📋 **Extracted Accessibility Tree**: Collapsible, formatted JSON view detailing every interactive element (`tag`, `role`, `label`, `type`, `autocomplete`, `bbox`, `value`).
-   - 📋 **Copy JSON**: One-click copy of the extracted payload to your clipboard.
+1. Open `http://localhost:3000/test/search-test.html` in Chrome.
+2. Open the **Vidur** extension popup.
+3. In the **Agent** tab, select the preset `"search for wireless headphones"` (or type your custom goal).
+4. Click **Start Autonomous Agent**:
+   - The agent captures the screen and sanitizes the DOM.
+   - The LLM reasons on the page structure and outputs action steps.
+   - The local executor types the query and clicks the search button.
+   - Search results are dynamically rendered on the page!
+   - The live **Agent Log** displays model reasoning, token resolution chips, and action metrics.
 
 ---
 
-### 4. Run Automated DOM Extraction Tests
+### 4. Run Automated Test Suites
 
-To run the automated headless JSDOM test suite:
 ```bash
 cd server
 npm test
 ```
 
----
-
-## 🧩 Shared Types
-
-The `shared/schema-types.ts` file defines type contracts shared between the extension and backend:
-- `DOMElementNode`: Schema for each extracted interactive element.
-- `CapturePayload`: Structured response containing screenshot base64, element tree, count, and viewport dimensions.
-- `CaptureResponse`: Status and error response contracts.
+Runs all 28 automated tests covering:
+- Local Action Executor & Token Resolver (`test/executor.test.js`)
+- End-to-End Orchestration Loop Simulation (`test/orchestration-e2e.test.js`)
+- AI Action Planning & Validation (`test/plan-action.test.js`)
+- Privacy Sanitizer & Luhn Algorithm (`test/sanitizer.test.js`)
+- Screen Schema & IoU BBox Deduplication (`test/screen-schema.test.js`)
+- DOM Tree Accessibility Extraction (`test-dom-extraction.js`)
